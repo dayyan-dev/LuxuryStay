@@ -99,7 +99,7 @@ function RoleBasedRedirect() {
   if (role === 'housekeeping')                  return <Navigate to="/admin/housekeeping"      replace />;
   if (role === 'maintenance')                   return <Navigate to="/admin/maintenance"       replace />;
   if (role === 'kitchen')                       return <Navigate to="/admin/restaurant-orders" replace />;
-  return <Navigate to="/login" replace />;
+  return <Navigate to="/admin/login" replace />;
 }
 
 function RoleRoute({ roles, children }) {

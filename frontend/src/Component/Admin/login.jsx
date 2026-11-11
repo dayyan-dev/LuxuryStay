@@ -5,11 +5,21 @@ import CustomPopup from './CustomPopup';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
+const STAFF_HOME_ROUTES = {
+  admin: '/admin/dashboard',
+  manager: '/admin/dashboard',
+  receptionist: '/admin/bookings',
+  housekeeping: '/admin/housekeeping',
+  maintenance: '/admin/maintenance',
+  kitchen: '/admin/restaurant-orders',
+};
+
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [popup, setPopup] = useState(null);
+  const [guestBlocked, setGuestBlocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
 
@@ -27,6 +37,7 @@ const Login = () => {
   // ── Normal Login ──
   const handleLogin = async (e) => {
     e.preventDefault();
+    setGuestBlocked(false);
     setLoading(true);
     try {
       const res = await axios.post(`${API_URL}/auth/login`, { email, password });
@@ -52,12 +63,7 @@ const Login = () => {
         return;
       }
 
-      // Normal login success
-      const { token, refreshToken, user } = res.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      redirectByRole(user.role);
+      completeStaffLogin(res.data);
     } catch (err) {
       setPopup({
         type: 'error',
@@ -76,11 +82,7 @@ const Login = () => {
         tempToken,
         token: twoFACode,
       });
-      const { token, refreshToken, user } = res.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      redirectByRole(user.role);
+      completeStaffLogin(res.data);
     } catch (err) {
       setPopup({ type: 'error', message: err.response?.data?.message || 'Invalid 2FA code.' });
     }
@@ -100,25 +102,37 @@ const Login = () => {
         tempToken,
         token: setupCode,
       });
-      const { token, refreshToken, user } = res.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      redirectByRole(user.role);
+      completeStaffLogin(res.data);
     } catch (err) {
       setPopup({ type: 'error', message: err.response?.data?.message || 'Invalid code. Try again.' });
     }
     setLoading(false);
   };
 
-  // ── Role based irect ──
-  const redirectByRole = (role) => {
-    if (role === 'admin' || role === 'manager') navigate('/admin/dashboard');
-    else if (role === 'receptionist') navigate('/admin/bookings');
-    else if (role === 'housekeeping') navigate('/admin/housekeeping');
-    else if (role === 'maintenance') navigate('/admin/maintenance');
-    else if (role === 'kitchen') navigate('/admin/restaurant-orders');
-    else navigate('/admin/dashboard');
+  // Enforce staff-only access here so guest credentials never write admin tokens or flash /admin/dashboard
+  const completeStaffLogin = ({ token, refreshToken, user }) => {
+    const targetRoute = STAFF_HOME_ROUTES[user?.role];
+    if (!targetRoute) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      if (token) {
+        axios.post(`${API_URL}/auth/logout`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
+      }
+      setGuestBlocked(true);
+      setPopup({
+        type: 'error',
+        message: 'Staff & Admin Portal only: Registered Guest accounts must sign in at Guest Login (/user-login).',
+      });
+      return;
+    }
+    setGuestBlocked(false);
+    localStorage.setItem('token', token);
+    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('user', JSON.stringify(user));
+    navigate(targetRoute, { replace: true });
   };
 
   return (
@@ -312,6 +326,23 @@ const Login = () => {
           ) : (
             /* SCREEN 3: Standard Login */
             <form onSubmit={handleLogin}>
+              {guestBlocked && (
+                <div
+                  className="alert alert-warning d-flex flex-column gap-2 py-2 px-3 mb-3"
+                  role="alert"
+                  style={{ fontSize: '0.84rem' }}
+                >
+                  <div>
+                    <strong>Guest Account Detected:</strong> This portal is restricted to Hotel Staff &amp; Admin roles.
+                  </div>
+                  <Link
+                    to="/user-login"
+                    className="btn btn-sm btn-outline-dark align-self-start"
+                  >
+                    Go to Guest Login (/user-login) &rarr;
+                  </Link>
+                </div>
+              )}
               <div className="mb-3">
                 <label className="ls-label">Work Email Address</label>
                 <input
@@ -397,8 +428,15 @@ const Login = () => {
               Password: <strong className="text-dark">admin123</strong>
             </div>
             <div className="mt-1" style={{ fontSize: '0.7rem', color: '#888' }}>
-              irects directly to executive operations dashboard.
+              Redirects directly to executive operations dashboard.
             </div>
+          </div>
+
+          <div className="text-center mt-3" style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>
+            Are you a registered guest?{' '}
+            <Link to="/user-login" className="fw-semibold text-decoration-none" style={{ color: 'var(--theme-primary, #0D9488)' }}>
+              Sign in at Guest Portal
+            </Link>
           </div>
 
           <p

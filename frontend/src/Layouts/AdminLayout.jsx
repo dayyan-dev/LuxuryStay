@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../Component/Admin/sidebar';
 import Navbar from '../Component/Admin/navbar';
 import ThemePanel from '../Component/Admin/ThemePanel';
+
+const STAFF_ROLES = ['admin', 'manager', 'receptionist', 'housekeeping', 'maintenance', 'kitchen'];
 
 const ADMIN_ROUTES = [
   '/admin/dashboard', '/admin/rooms', '/admin/bookings', '/admin/booking-new',
@@ -22,13 +24,8 @@ const AdminLayout = () => {
   const token = localStorage.getItem('token');
   const role = user.role || 'guest';
 
+  const isStaff = Boolean(token) && STAFF_ROLES.includes(role);
   const isAdminRoute = ADMIN_ROUTES.includes(location.pathname);
-
-  useEffect(() => {
-    if (!token) { navigate('/login'); return; }
-    const allowedRoles = ['admin', 'manager', 'receptionist', 'housekeeping', 'maintenance', 'kitchen'];
-    if (!allowedRoles.includes(role)) { navigate('/login'); return; }
-  }, [token, role, navigate]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -45,14 +42,20 @@ const AdminLayout = () => {
     setSidebarOpen(false);
   }, [location.pathname]);
 
+  // Synchronous guard prevents any brief dashboard/sidebar flash for guests or unauthenticated visitors
+  if (!isStaff) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
   const handleToggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const handleCollapse = () => setCollapsed(!collapsed);
   const handleClose = () => setSidebarOpen(false);
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/admin/login');
   };
 
   return (
