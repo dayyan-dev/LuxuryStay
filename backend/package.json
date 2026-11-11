@@ -1,0 +1,47 @@
+{
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.2.0",
+    "mongoose": "^9.6.2",
+    "multer": "^2.1.1",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^9.0.3",
+    "nodemon": "^3.1.14",
+    "pdfkit": "^0.18.0",
+    "pngjs": "^7.0.0",
+    "qrcode": "^1.5.4",
+    "recharts": "^3.8.1",
+    "socket.io": "^4.8.3",
+    "speakeasy": "^2.0.0",
+    "xss-clean": "^0.1.4"
+  },
+  "devDependencies": {
+    "chai": "^4.4.1",
+    "mocha": "^10.4.0",
+    "sinon": "^17.0.1",
+    "supertest": "^7.0.0"
+  },
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha tests --recursive --timeout 30000 --exit",
+    "seed": "node scripts/seedRealisticData.js",
+    "start": "node Index.js",
+    "dev": "nodemon Index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

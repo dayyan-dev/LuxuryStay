@@ -1,0 +1,145 @@
+﻿/* ============================================================
+   LuxuryStay — global scrollbars (page + all overflow containers)
+   ============================================================ */
+:root {
+  --ls-scrollbar-size: 10px;
+  --ls-scrollbar-thumb: var(--theme-primary-soft, rgba(27, 54, 93, 0.5));
+  --ls-scrollbar-thumb-hover: var(--theme-primary-soft, rgba(27, 54, 93, 0.88));
+  --ls-scrollbar-track: rgba(41, 39, 34, 0.04);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ls-scrollbar-thumb) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: var(--ls-scrollbar-size);
+  height: var(--ls-scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--ls-scrollbar-track);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--ls-scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ls-scrollbar-thumb-hover);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark surfaces (admin sidebar / charcoal panels) — softer gold thumb */
+.admin-sidebar,
+.admin-sidebar-scroll,
+.admin-layout .navbar-menu,
+.app-menu.navbar-menu,
+[data-bs-theme="dark"],
+.bg-dark,
+.lx-drawer {
+  scrollbar-color: var(--theme-primary-soft, rgba(27, 54, 93, 0.45)) transparent;
+}
+
+.admin-sidebar::-webkit-scrollbar-track,
+.admin-sidebar-scroll::-webkit-scrollbar-track,
+.admin-layout .navbar-menu::-webkit-scrollbar-track,
+.app-menu.navbar-menu::-webkit-scrollbar-track,
+.lx-drawer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb,
+.admin-sidebar-scroll::-webkit-scrollbar-thumb,
+.admin-layout .navbar-menu::-webkit-scrollbar-thumb,
+.app-menu.navbar-menu #scrollbar::-webkit-scrollbar-thumb,
+.lx-drawer::-webkit-scrollbar-thumb {
+  background: var(--theme-primary-soft, rgba(27, 54, 93, 0.40));
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb:hover,
+.admin-sidebar-scroll::-webkit-scrollbar-thumb:hover,
+.app-menu.navbar-menu #scrollbar::-webkit-scrollbar-thumb:hover,
+.lx-drawer::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-primary-soft, rgba(27, 54, 93, 0.75));
+}
+
+/* Sidebar submenu chevron for React-controlled dropdowns */
+.navbar-menu .navbar-nav .nav-link.menu-link.submenu-toggle {
+  position: relative;
+}
+
+.navbar-menu .navbar-nav .nav-link.menu-link.submenu-toggle::after {
+  display: block;
+  content: "\f0142";
+  font-family: "Material Design Icons";
+  margin-left: auto;
+  transition: transform 0.2s;
+  font-size: 1.05rem;
+  position: absolute;
+  right: 18px;
+  color: inherit;
+}
+
+.navbar-menu .navbar-nav .nav-link.menu-link.submenu-toggle[aria-expanded="true"]::after {
+  transform: rotate(90deg);
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+
+
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+/* Sidebar scrollable fix */
+.app-menu.navbar-menu {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.app-menu.navbar-menu #scrollbar {
+  flex: 1 1 0%;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Admin menu: thin taupe scrollbar (replaces fully hidden ugly default) */
+.app-menu.navbar-menu #scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-primary-soft, rgba(27, 54, 93, 0.45)) transparent;
+}
+.app-menu.navbar-menu #scrollbar::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+}
+.app-menu.navbar-menu #scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app-menu.navbar-menu #scrollbar::-webkit-scrollbar-thumb {
+  background: var(--theme-primary-soft, rgba(27, 54, 93, 0.40));
+  border-radius: 999px;
+}
+.app-menu.navbar-menu #scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-primary-soft, rgba(27, 54, 93, 0.75));
+}

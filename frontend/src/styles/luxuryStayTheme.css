@@ -1,0 +1,409 @@
+/* ============================================================
+   LUXURYSTAY HOSPITALITY — BRAND THEME
+   Ivory + Warm Taupe: Ivory #F7F5F0, Taupe var(--theme-primary, #1B365D), Charcoal #292722
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --ls-charcoal: var(--theme-sidebar, #0F172A);
+  --ls-charcoal-light: #1E293B;
+  --ls-ivory: var(--theme-bg-primary, #F8FAFC);
+  --ls-ivory-dark: var(--theme-bg-secondary, #EDF2F7);
+  --ls-gold: var(--theme-primary, #0D9488);
+  --ls-gold-hover: var(--theme-primary-hover, #0F766E);
+  --ls-gold-light: var(--theme-primary-soft, rgba(13, 148, 136, 0.14));
+  --ls-gold-gradient: var(--theme-primary-gradient, linear-gradient(135deg, var(--theme-primary, #0D9488) 0%, var(--theme-primary-hover, #0F766E) 100%));
+  --ls-gray-dark: #334155;
+  --ls-gray: #64748B;
+  --ls-gray-light: #F1F5F9;
+  --ls-border-warm: var(--theme-border, #E2E8F0);
+  --ls-border-soft: rgba(15, 23, 42, 0.08);
+  --ls-font-serif: 'Playfair Display', Georgia, serif;
+  --ls-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ls-shadow-luxury: 0 12px 36px rgba(15, 23, 42, 0.08);
+  --ls-shadow-hover: 0 20px 48px rgba(15, 23, 42, 0.14);
+}
+
+body {
+  font-family: var(--ls-font-sans);
+  color: var(--ls-charcoal);
+  background-color: #FFFFFF;
+}
+
+h1, h2, h3, .ls-serif {
+  font-family: var(--ls-font-serif);
+  letter-spacing: -0.015em;
+}
+
+/* ── Luxury Header & Navbar ── */
+.ls-navbar {
+  background-color: var(--ls-charcoal);
+  border-bottom: 1px solid var(--theme-primary-soft, rgba(27, 54, 93, 0.30));
+  transition: all 0.3s ease;
+}
+
+.ls-nav-link {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 0.45rem 0.75rem !important;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.ls-nav-link:hover,
+.ls-nav-link.active-link {
+  color: var(--ls-gold) !important;
+}
+
+.ls-nav-link.active-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0px;
+  left: 0.9rem;
+  right: 0.9rem;
+  height: 2px;
+  background-color: var(--ls-gold);
+}
+
+/* ── Luxury Buttons ── */
+.ls-btn-gold {
+  background: var(--ls-gold-gradient);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  font-size: 0.88rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.75rem 1.6rem;
+  border-radius: 4px;
+  border: none;
+  box-shadow: 0 4px 14px var(--theme-primary-soft, rgba(27, 54, 93, 0.30));
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.ls-btn-gold:hover {
+  background: var(--theme-primary-hover, #122642);
+  box-shadow: 0 6px 20px var(--theme-primary-soft, rgba(27, 54, 93, 0.45));
+  transform: translateY(-1px);
+}
+
+.ls-btn-outline-gold {
+  background: transparent;
+  color: var(--ls-gold) !important;
+  border: 1px solid var(--ls-gold);
+  font-weight: 600;
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+  padding: 0.7rem 1.4rem;
+  border-radius: 4px;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.ls-btn-outline-gold:hover {
+  background: var(--ls-gold);
+  color: #FFFFFF !important;
+}
+
+/* ── Section Titles (PC Hotels style) ── */
+.ls-section-tag {
+  color: var(--ls-gold);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.ls-section-title {
+  font-size: 2.3rem;
+  font-weight: 600;
+  color: var(--ls-charcoal);
+  margin-bottom: 0.75rem;
+}
+
+.ls-section-subtitle {
+  color: var(--ls-gray);
+  font-size: 1.05rem;
+  max-width: 650px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ── Hero Search Widget (Floating) ── */
+.ls-hero-search-wrap {
+  background: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+  padding: 1.25rem 1.5rem;
+  margin-top: -3.5rem;
+  position: relative;
+  z-index: 20;
+  border: 1px solid var(--ls-border-warm);
+}
+
+.ls-search-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ls-gray);
+  margin-bottom: 0.35rem;
+  display: block;
+}
+
+.ls-search-input,
+.ls-search-select {
+  border: 1px solid #E2E2E2;
+  border-radius: 4px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+  color: var(--ls-charcoal);
+  width: 100%;
+  font-weight: 500;
+  transition: border-color 0.2s ease;
+}
+
+.ls-search-input:focus,
+.ls-search-select:focus {
+  border-color: var(--ls-gold);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--theme-primary-soft, rgba(27, 54, 93, 0.2));
+}
+
+/* ── Hotel Card (PC Hotels style) ── */
+.ls-hotel-card {
+  background: #FFFFFF;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--ls-border-warm);
+  box-shadow: var(--ls-shadow-luxury);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ls-hotel-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--ls-shadow-hover);
+}
+
+.ls-hotel-img-wrap {
+  position: relative;
+  height: 240px;
+  overflow: hidden;
+}
+
+.ls-hotel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.ls-hotel-card:hover .ls-hotel-img {
+  transform: scale(1.05);
+}
+
+.ls-hotel-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: var(--ls-charcoal);
+  color: var(--ls-gold);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+
+.ls-hotel-rating {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(41, 39, 34, 0.85);
+  backdrop-filter: blur(4px);
+  color: #FFFFFF;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ls-hotel-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ls-hotel-city {
+  color: var(--ls-gold);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.35rem;
+}
+
+.ls-hotel-title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ls-charcoal);
+  margin-bottom: 0.6rem;
+  line-height: 1.3;
+}
+
+.ls-hotel-desc {
+  font-size: 0.9rem;
+  color: var(--ls-gray);
+  line-height: 1.55;
+  margin-bottom: 1.25rem;
+  flex: 1;
+}
+
+.ls-hotel-facilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 1.25rem;
+}
+
+.ls-facility-pill {
+  background: var(--ls-ivory);
+  color: var(--ls-charcoal);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--ls-border-warm);
+}
+
+.ls-hotel-footer {
+  border-top: 1px solid #EFECE6;
+  padding-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ls-hotel-price-label {
+  font-size: 0.76rem;
+  color: var(--ls-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ls-hotel-price {
+  font-family: var(--ls-font-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ls-charcoal);
+}
+
+/* ── Offer Card ── */
+.ls-offer-card {
+  background: #FFFFFF;
+  border: 1px solid var(--ls-border-warm);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--ls-shadow-luxury);
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ls-offer-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--ls-shadow-hover);
+}
+
+.ls-offer-img {
+  height: 200px;
+  width: 100%;
+  object-fit: cover;
+}
+
+.ls-offer-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ls-offer-code-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ls-gold-light);
+  color: var(--ls-gold);
+  border: 1px dashed var(--ls-gold);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  width: fit-content;
+  margin-bottom: 0.85rem;
+}
+
+/* ── Privilege Banner (Loyalty) ── */
+.ls-privilege-banner {
+  background: linear-gradient(135deg, var(--theme-sidebar, #0F172A) 0%, var(--theme-primary, #1B365D) 100%);
+  border-radius: 12px;
+  color: #FFFFFF;
+  padding: 3.5rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--theme-primary-soft, rgba(27, 54, 93, 0.35));
+}
+
+.ls-privilege-pattern {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 45%;
+  background-image: radial-gradient(circle, var(--theme-primary-soft, rgba(27, 54, 93, 0.18)) 1px, transparent 1px);
+  background-size: 18px 18px;
+  pointer-events: none;
+}
+
+/* ── Filter Tab Buttons ── */
+.ls-filter-pill {
+  background: #FFFFFF;
+  border: 1px solid var(--ls-border-warm);
+  color: var(--ls-charcoal);
+  padding: 0.5rem 1.1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ls-filter-pill:hover,
+.ls-filter-pill.active {
+  background: var(--ls-charcoal);
+  color: var(--ls-gold);
+  border-color: var(--ls-charcoal);
+}
+

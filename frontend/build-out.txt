@@ -1,0 +1,64 @@
+
+> frontend@0.1.0 build
+> react-scripts build
+
+(node:8812) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Creating an optimized production build...
+Compiled successfully.
+
+File sizes after gzip:
+
+  128.33 kB  build\static\js\main.77d59a15.js
+  120.19 kB  build\static\js\499.81f56d91.chunk.js
+  109.54 kB  build\static\js\869.7804e2b2.chunk.js
+  17.6 kB    build\static\js\82.879cf098.chunk.js
+  7.86 kB    build\static\css\main.794938df.css
+  7.83 kB    build\static\js\185.2cac6fa4.chunk.js
+  6.9 kB     build\static\js\410.9e7bb789.chunk.js
+  5.64 kB    build\static\js\705.e06a1260.chunk.js
+  5.27 kB    build\static\js\564.44a53d24.chunk.js
+  5.24 kB    build\static\js\620.c37b3334.chunk.js
+  4.88 kB    build\static\js\319.f2fed887.chunk.js
+  4.67 kB    build\static\js\286.7667ae72.chunk.js
+  4.63 kB    build\static\js\880.f709fa3e.chunk.js
+  4.63 kB    build\static\js\794.dab90eb1.chunk.js
+  4.51 kB    build\static\js\478.c408342c.chunk.js
+  4.1 kB     build\static\js\837.ce61a918.chunk.js
+  4.06 kB    build\static\js\811.fd9e4523.chunk.js
+  4.06 kB    build\static\js\123.57113b0f.chunk.js
+  4.06 kB    build\static\js\946.bb6bf124.chunk.js
+  3.97 kB    build\static\js\265.94031ac9.chunk.js
+  3.75 kB    build\static\js\966.2236fc45.chunk.js
+  3.65 kB    build\static\js\325.b19dcf87.chunk.js
+  3.19 kB    build\static\js\91.5cb4ce49.chunk.js
+  3.15 kB    build\static\js\24.3b262f67.chunk.js
+  2.97 kB    build\static\js\632.6a2f0a17.chunk.js
+  2.87 kB    build\static\js\904.67776cd0.chunk.js
+  2.82 kB    build\static\js\875.fe08ff77.chunk.js
+  2.71 kB    build\static\js\35.dd96fb1d.chunk.js
+  2.58 kB    build\static\js\944.01da26ef.chunk.js
+  2.45 kB    build\static\js\411.79904503.chunk.js
+  2.34 kB    build\static\js\830.c404e96f.chunk.js
+  2.3 kB     build\static\js\68.ecfc4afc.chunk.js
+  2.18 kB    build\static\js\422.4a188992.chunk.js
+  2.05 kB    build\static\js\199.881e3b96.chunk.js
+  2 kB       build\static\js\663.ea32cd2b.chunk.js
+  1.77 kB    build\static\js\63.0a97186c.chunk.js
+  1.63 kB    build\static\js\22.fa335d42.chunk.js
+  1.63 kB    build\static\js\890.9f5db695.chunk.js
+  1.35 kB    build\static\js\672.b1be25a0.chunk.js
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+
