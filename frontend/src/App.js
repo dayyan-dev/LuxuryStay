@@ -94,11 +94,11 @@ function PageLoader() {
 function RoleBasedRedirect() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const role = user.role;
-  if (role === 'admin' || role === 'manager')   return <Navigate to="dashboard"        replace />;
-  if (role === 'receptionist')                  return <Navigate to="bookings"          replace />;
-  if (role === 'housekeeping')                  return <Navigate to="housekeeping"      replace />;
-  if (role === 'maintenance')                   return <Navigate to="maintenance"       replace />;
-  if (role === 'kitchen')                       return <Navigate to="restaurant-orders" replace />;
+  if (role === 'admin' || role === 'manager')   return <Navigate to="/admin/dashboard"         replace />;
+  if (role === 'receptionist')                  return <Navigate to="/admin/bookings"          replace />;
+  if (role === 'housekeeping')                  return <Navigate to="/admin/housekeeping"      replace />;
+  if (role === 'maintenance')                   return <Navigate to="/admin/maintenance"       replace />;
+  if (role === 'kitchen')                       return <Navigate to="/admin/restaurant-orders" replace />;
   return <Navigate to="/login" replace />;
 }
 
@@ -119,8 +119,9 @@ function App() {
             {/* Root irect */}
             <Route path="/" element={<Navigate to="/home" replace />} />
 
-            {/* Admin login */}
+            {/* Admin / Staff login (both /login and /admin/login supported) */}
             <Route path="/login" element={<Login />} />
+            <Route path="/admin/login" element={<Login />} />
 
             {/* User Auth routes */}
             <Route path="/user-login" element={<UserLogin />} />

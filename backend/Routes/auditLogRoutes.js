@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, adminOnly } = require('../Middleware/authMiddleware');
+const { protect, managerOrAdmin } = require('../Middleware/authMiddleware');
 const {
   getAuditLogs,
   getUserAuditLogs,
@@ -8,8 +8,8 @@ const {
   getAuditSummary,
 } = require('../Controllers/auditLogController');
 
-// All audit log routes require admin access
-router.use(protect, adminOnly);
+// Audit log routes allow Admin & General Manager access
+router.use(protect, managerOrAdmin);
 
 router.get('/', getAuditLogs);                        // GET /api/audit-logs
 router.get('/summary', getAuditSummary);              // GET /api/audit-logs/summary

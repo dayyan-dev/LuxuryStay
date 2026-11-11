@@ -9,7 +9,7 @@ const {
   setup2FA, enable2FA, verify2FA, disable2FA,
   setup2FAWithToken, enable2FAWithToken, withdrawConsent
 } = require('../Controllers/authController');
-const { protect, adminOnly } = require('../Middleware/authMiddleware');
+const { protect, adminOnly, staffRoles } = require('../Middleware/authMiddleware');
 
 router.post('/register', register);
 router.post('/verify-email-otp', verifyEmailOtp);
@@ -25,7 +25,7 @@ router.put('/users/:id', protect, adminOnly, updateUser);
 router.delete('/users/:id', protect, adminOnly, deleteUser);
 
 router.post('/staff', protect, adminOnly, createStaff);
-router.post('/walkin-guest', protect, adminOnly, createWalkInGuest);
+router.post('/walkin-guest', protect, staffRoles('admin', 'manager', 'receptionist'), createWalkInGuest);
 
 router.post('/refresh-token', refreshAccessToken);
 router.post('/logout', protect, logout);

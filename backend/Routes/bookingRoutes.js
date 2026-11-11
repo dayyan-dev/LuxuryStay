@@ -84,7 +84,7 @@ router.put('/:id/check-in', protect, staffRoles('admin', 'manager', 'receptionis
 router.put('/:id/check-out', protect, staffRoles('admin', 'manager', 'receptionist'), checkOutBooking);
 
 // Payment Status Update
-router.put('/:id/payment', protect, adminOnly, updatePaymentStatus);
+router.put('/:id/payment', protect, staffRoles('admin', 'manager', 'receptionist'), updatePaymentStatus);
 
 // Complete Booking
 router.put('/:id/complete', protect, staffRoles('admin', 'manager', 'receptionist'), completeBooking);

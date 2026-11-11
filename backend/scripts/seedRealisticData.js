@@ -381,14 +381,15 @@ async function seedRealisticData() {
     );
     console.log(` - Admin account ready: ${adminUser.email} (Password: admin123)`);
 
-    // 5. Ensure core staff accounts exist for HK / maintenance / front desk
-    console.log('\nVerifying Staff Accounts...');
+    // 5. Ensure core staff + demo guest accounts exist for RBAC portals
+    console.log('\nVerifying Staff & Demo Guest Accounts...');
     const staffAccounts = [
       { name: 'Reception Desk', email: 'reception@hotel.com', phone: '03001110001', role: 'receptionist', password: 'Staff123!' },
       { name: 'Housekeeping Lead', email: 'housekeeping@hotel.com', phone: '03001110002', role: 'housekeeping', password: 'Staff123!' },
       { name: 'Maintenance Lead', email: 'maintenance@hotel.com', phone: '03001110003', role: 'maintenance', password: 'Staff123!' },
       { name: 'Kitchen Lead', email: 'kitchen@hotel.com', phone: '03001110004', role: 'kitchen', password: 'Staff123!' },
       { name: 'Hotel Manager', email: 'manager@hotel.com', phone: '03001110005', role: 'manager', password: 'Staff123!' },
+      { name: 'Demo Guest', email: 'guest@hotel.com', phone: '03001110006', role: 'guest', password: 'Guest123!' },
     ];
     for (const staff of staffAccounts) {
       const hashed = await bcrypt.hash(staff.password, 10);
