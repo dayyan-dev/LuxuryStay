@@ -11,10 +11,10 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Agar 401 aaya aur TOKEN_EXPIred code hai aur already retry nahi kiya
+    // Agar 401 aaya aur TOKEN_EXPIRED code hai aur already retry nahi kiya
     if (
       error.response?.status === 401 &&
-      error.response?.data?.code === 'TOKEN_EXPIred' &&
+      error.response?.data?.code === 'TOKEN_EXPIRED' &&
       !originalRequest._retry
     ) {
       originalRequest._retry = true;

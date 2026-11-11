@@ -16,13 +16,17 @@ const getPricingFromSettings = () => {
 };
 
 const Rooms = () => {
-  const token = localStorage.getItem("token");
-  const headers = { Authorization: `Bearer ${token}` };
+  const getAuthHeaders = () => {
+    const t = localStorage.getItem("token");
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  };
+  const headers = getAuthHeaders();
   const [searchParams, setSearchParams] = useSearchParams();
   const statusFromUrl = searchParams.get('status') || '';
   const initialStatus = VALID_STATUSES.includes(statusFromUrl) ? statusFromUrl : '';
 
   const [rooms, setRooms]               = useState([]);
+  const [hotels, setHotels]             = useState([]);
   const [loading, setLoading]           = useState(true);
   const [filterStatus, setFilterStatus] = useState(initialStatus);
   const [filterType, setFilterType]     = useState("");
@@ -39,12 +43,15 @@ const Rooms = () => {
   const error = popup?.message;
 
   const emptyForm = {
-    floor: "", roomNumber: "", type: "", price: "",
+    hotelId: "", floor: "", roomNumber: "", type: "", price: "",
     capacity: "", amenities: "", description: "", status: "available", images: [],
   };
   const [form, setForm] = useState(emptyForm);
 
-  useEffect(() => { loadRooms(); }, []);
+  useEffect(() => {
+    loadHotels();
+    loadRooms();
+  }, []);
 
   // Keep filter in sync when arriving from Live Room dashboard links
   useEffect(() => {
@@ -84,17 +91,40 @@ const Rooms = () => {
     }
   };
 
- const loadRooms = async () => {
+  const loadHotels = async () => {
+    try {
+      const res = await api.get(`${API_URL}/hotels`);
+      const list = res.data?.data || res.data || [];
+      const arr = Array.isArray(list) ? list : [];
+      setHotels(arr);
+      return arr;
+    } catch (err) {
+      console.error('Failed to load hotels:', err);
+      return [];
+    }
+  };
+
+  const loadRooms = async () => {
     setLoading(true);
     try {
-      const [roomsRes, maintRes, hkRes] = await Promise.all([
-        api.get(`${API_URL}/rooms`, { headers }),
-        api.get(`${API_URL}/maintenance`, { headers }),
-        api.get(`${API_URL}/housekeeping`, { headers }),
+      const auth = getAuthHeaders();
+      const [roomsRes, maintRes, hkRes] = await Promise.allSettled([
+        api.get(`${API_URL}/rooms?includeUnassigned=true`, { headers: auth }),
+        api.get(`${API_URL}/maintenance`, { headers: auth }),
+        api.get(`${API_URL}/housekeeping`, { headers: auth }),
       ]);
-      const activeMaint = (maintRes.data || []).filter(r => r.status !== 'resolved');
-      const activeHk = (hkRes.data || []).filter(r => r.cleaningStatus !== 'completed');
-      const enriched = (roomsRes.data || []).map(room => ({
+      const roomList = roomsRes.status === 'fulfilled' && Array.isArray(roomsRes.value.data)
+        ? roomsRes.value.data
+        : [];
+      const maintList = maintRes.status === 'fulfilled' && Array.isArray(maintRes.value.data)
+        ? maintRes.value.data
+        : [];
+      const hkList = hkRes.status === 'fulfilled' && Array.isArray(hkRes.value.data)
+        ? hkRes.value.data
+        : [];
+      const activeMaint = maintList.filter(r => r.status !== 'resolved');
+      const activeHk = hkList.filter(r => r.cleaningStatus !== 'completed');
+      const enriched = roomList.map(room => ({
         ...room,
         _activeMaint: activeMaint.filter(r => String(r.roomId?._id || r.roomId) === String(room._id)).length,
         _activeHk: activeHk.filter(r => String(r.roomId?._id || r.roomId) === String(room._id)).length,
@@ -154,24 +184,35 @@ const Rooms = () => {
     }));
   };
 
+  const buildRoomFormData = (roomForm, statusOverride) => {
+    const formData = new FormData();
+    if (roomForm.hotelId) formData.append("hotelId", roomForm.hotelId);
+    formData.append("roomNumber",  String(roomForm.roomNumber || "").trim());
+    if (roomForm.floor) formData.append("floor", roomForm.floor);
+    formData.append("type",        roomForm.type);
+    formData.append("price",       roomForm.price);
+    formData.append("capacity",    roomForm.capacity);
+    formData.append("description", roomForm.description || "");
+    formData.append("status",      statusOverride || roomForm.status || "available");
+    String(roomForm.amenities || "")
+      .split(",")
+      .map(a => a.trim())
+      .filter(Boolean)
+      .forEach(a => formData.append("amenities", a));
+    if (roomForm.images?.length > 0) {
+      roomForm.images.forEach(img => formData.append("images", img));
+    }
+    return formData;
+  };
+
   const handleAdd = async () => {
     setPopup(null);
-    if (!form.roomNumber || !form.type || !form.price || !form.capacity) {
-      setPopup({ type: 'error', message: "Please fill all required fields." });
+    if (!form.hotelId || !form.floor || !String(form.roomNumber || "").trim() || !form.type || !form.price || !form.capacity) {
+      setPopup({ type: 'error', message: "Please select Property, Floor, Room Number, Type, and Price." });
       return;
     }
     try {
-      const formData = new FormData();
-      formData.append("roomNumber",  form.roomNumber);
-      formData.append("floor",       form.floor);
-      formData.append("type",        form.type);
-      formData.append("price",       form.price);
-      formData.append("capacity",    form.capacity);
-      formData.append("description", form.description);
-      formData.append("status",      "available");
-      form.amenities.split(",").forEach(a => formData.append("amenities", a.trim()));
-      form.images.forEach(img => formData.append("images", img));
-
+      const formData = buildRoomFormData(form, "available");
       await api.post(`${API_URL}/rooms`, formData, {
         headers: { ...headers, "Content-Type": "multipart/form-data" },
       });
@@ -183,19 +224,12 @@ const Rooms = () => {
 
   const handleEdit = async () => {
     setPopup(null);
+    if (!String(form.roomNumber || "").trim() || !form.type || !form.price || !form.capacity) {
+      setPopup({ type: 'error', message: "Please fill all required fields." });
+      return;
+    }
     try {
-      const formData = new FormData();
-      formData.append("roomNumber",  form.roomNumber);
-      formData.append("floor",       form.floor || "");
-      formData.append("type",        form.type);
-      formData.append("price",       form.price);
-      formData.append("capacity",    form.capacity);
-      formData.append("description", form.description);
-      formData.append("status",      form.status);
-      form.amenities.split(",").forEach(a => formData.append("amenities", a.trim()));
-      if (form.images?.length > 0) {
-        form.images.forEach(img => formData.append("images", img));
-      }
+      const formData = buildRoomFormData(form);
       await api.put(`${API_URL}/rooms/${selectedRoom._id}`, formData, {
         headers: { ...headers, "Content-Type": "multipart/form-data" },
       });
@@ -236,9 +270,18 @@ const Rooms = () => {
     }
   };
 
-  const openEdit = (room) => {
+  const openAddModal = async () => {
+    const list = hotels.length > 0 ? hotels : await loadHotels();
+    setForm({ ...emptyForm, hotelId: list[0]?._id || "" });
+    setPopup(null);
+    setShowAddModal(true);
+  };
+
+  const openEdit = async (room) => {
+    const list = hotels.length > 0 ? hotels : await loadHotels();
     setSelectedRoom(room);
     setForm({
+      hotelId:     room.hotelId?._id || room.hotelId || list[0]?._id || "",
       roomNumber:  room.roomNumber,
       floor:       room.floor || "",
       type:        room.type,
@@ -260,11 +303,7 @@ const Rooms = () => {
         <div className="col-12">
           <div className="page-title-box d-sm-flex align-items-center justify-content-between">
             <h4 className="mb-sm-0">Manage Rooms</h4>
-            <button className="btn btn-success" onClick={() => {
-              setForm(emptyForm);
-              setPopup(null);
-              setShowAddModal(true);
-            }}>
+            <button className="btn btn-success" onClick={openAddModal}>
               <i className="ri-add-line me-1"></i> Add Room
             </button>
           </div>
@@ -462,6 +501,13 @@ const Rooms = () => {
                           </h5>
                           {typeBadge(room.type)}
                         </div>
+                        <div className="mb-1">
+                          {room.hotelId?.name ? (
+                            <small className="text-muted"><i className="ri-map-pin-line me-1" />{room.hotelId.city || room.hotelId.name}</small>
+                          ) : (
+                            <span className="badge bg-warning-subtle text-warning fs-11">No Property Assigned (Edit to assign)</span>
+                          )}
+                        </div>
 
                         {/* Price & Capacity */}
                         <div className="d-flex align-items-center justify-content-between my-2 pb-2 border-bottom">
@@ -656,8 +702,17 @@ const Rooms = () => {
               <div className="modal-body">
                 {error && <div className="alert alert-danger">{error}</div>}
                 <div className="row g-3">
+                  <div className="col-12">
+                    <label className="form-label">Hotel / Property <span className="text-danger">*</span></label>
+                    <select className="form-select" value={form.hotelId} onChange={e => setForm({ ...form, hotelId: e.target.value })}>
+                      <option value="">Select Property</option>
+                      {hotels.map(h => (
+                        <option key={h._id} value={h._id}>{h.name} ({h.city})</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="col-md-6">
-                    <label className="form-label">Floor</label>
+                    <label className="form-label">Floor <span className="text-danger">*</span></label>
                     <select className="form-select" value={form.floor} onChange={e => setForm({ ...form, floor: e.target.value })}>
                       <option value="">Select Floor</option>
                       <option value="ground">Ground Floor</option>
@@ -666,13 +721,13 @@ const Rooms = () => {
                     </select>
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label">Room Number</label>
+                    <label className="form-label">Room Number <span className="text-danger">*</span></label>
                     <div className="input-group">
                       <span className="input-group-text">
                         {form.floor === "ground" ? "GF" : form.floor === "first" ? "FF" : form.floor === "second" ? "SF" : "—"}
                       </span>
                       <input className="form-control" value={form.roomNumber}
-                        onChange={e => setForm({ ...form, roomNumber: e.target.value })} placeholder="101" />
+                        onChange={e => setForm({ ...form, roomNumber: e.target.value })} placeholder="e.g. KHI-105" />
                     </div>
                   </div>
 
@@ -748,6 +803,25 @@ const Rooms = () => {
               <div className="modal-body">
                 {error && <div className="alert alert-danger">{error}</div>}
                 <div className="row g-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Hotel / Property</label>
+                    <select className="form-select" value={form.hotelId}
+                      onChange={e => setForm({ ...form, hotelId: e.target.value })}>
+                      <option value="">Select Property</option>
+                      {hotels.map(h => (
+                        <option key={h._id} value={h._id}>{h.name} ({h.city})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Floor</label>
+                    <select className="form-select" value={form.floor}
+                      onChange={e => setForm({ ...form, floor: e.target.value })}>
+                      <option value="ground">Ground Floor</option>
+                      <option value="first">First Floor</option>
+                      <option value="second">Second Floor</option>
+                    </select>
+                  </div>
                   <div className="col-md-6">
                     <label className="form-label">Room Number</label>
                     <input className="form-control" value={form.roomNumber}

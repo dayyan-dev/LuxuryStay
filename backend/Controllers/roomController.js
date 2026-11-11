@@ -4,18 +4,49 @@ const auditLog = require('../Services/auditLogService'); // ✅ ADD
 const { reconcileRoomStatuses } = require('../Services/roomStatusService');
 const { annotateRoomsAvailability } = require('../Services/roomAvailabilityService');
 
+const parseAmenities = (raw) => {
+  if (!raw) return [];
+  const list = Array.isArray(raw) ? raw : String(raw).split(',');
+  return list.map((item) => String(item).trim()).filter(Boolean);
+};
+
+const handleRoomError = (err, res) => {
+  if (err?.code === 11000) {
+    const dupRoom = err.keyValue?.roomNumber || '';
+    return res.status(409).json({
+      message: dupRoom
+        ? `Room number "${dupRoom}" already exists. Please choose a different room number.`
+        : 'A room with this number already exists.',
+    });
+  }
+  if (err?.name === 'ValidationError' || err?.name === 'CastError') {
+    return res.status(400).json({ message: err.message });
+  }
+  console.error('[ROOM ERROR]', err);
+  return res.status(500).json({ message: 'Server error', error: err.message });
+};
+
 // ========================
 // ADD ROOM
 // ========================
 const addRoom = async (req, res) => {
   try {
-    const imagePaths = req.files?.map((file) => file.filename);
+    const imagePaths = req.files?.map((file) => file.filename) || [];
+    const roomData = { ...req.body };
+
+    if (roomData.roomNumber) {
+      roomData.roomNumber = String(roomData.roomNumber).trim();
+    }
+    if (!roomData.hotelId || String(roomData.hotelId).trim() === '') {
+      delete roomData.hotelId;
+    }
 
     const room = await Room.create({
-      ...req.body,
-      amenities: Array.isArray(req.body.amenities) ? req.body.amenities : [req.body.amenities],
+      ...roomData,
+      amenities: parseAmenities(req.body.amenities),
       images: imagePaths,
     });
+    await room.populate('hotelId', 'name city slug');
 
     // ✅ AUDIT LOG
     await auditLog.log(req, {
@@ -28,21 +59,20 @@ const addRoom = async (req, res) => {
 
     res.status(201).json({ message: 'Room added successfully', room });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: 'Server error', error: err.message });
+    handleRoomError(err, res);
   }
 };
 
 // ========================
 // GET ALL ROOMS
-// Optional query: hotelId, city, checkIn, checkOut, guests
+// Optional query: hotelId, city, checkIn, checkOut, guests, includeUnassigned
 // ========================
 const getAllRooms = async (req, res) => {
   try {
     // Heal stuck occupied rooms before returning list
     await reconcileRoomStatuses(req.app.get('io'));
 
-    const { hotelId, city, checkIn, checkOut, guests } = req.query;
+    const { hotelId, city, checkIn, checkOut, guests, includeUnassigned } = req.query;
     const filter = {};
 
     if (hotelId) {
@@ -53,7 +83,7 @@ const getAllRooms = async (req, res) => {
         status: { $ne: 'inactive' },
       }).select('_id');
       filter.hotelId = { $in: hotels.map((h) => h._id) };
-    } else {
+    } else if (includeUnassigned !== 'true') {
       // Guest catalog: only property-linked inventory (no legacy shared rooms)
       filter.hotelId = { $exists: true, $ne: null };
     }
@@ -99,10 +129,25 @@ const updateRoom = async (req, res) => {
 
     const imagePaths = req.files?.map((file) => file.filename);
     const updatedData = { ...req.body };
+    if (updatedData.roomNumber) {
+      updatedData.roomNumber = String(updatedData.roomNumber).trim();
+    }
+    if (updatedData.hotelId === '') {
+      delete updatedData.hotelId;
+    }
+    if (updatedData.floor === '') {
+      delete updatedData.floor;
+    }
+    if (req.body.amenities !== undefined) {
+      updatedData.amenities = parseAmenities(req.body.amenities);
+    }
     updatedData.images = imagePaths?.length > 0 ? imagePaths : room.images;
 
     const previousStatus = room.status;
-    const updatedRoom = await Room.findByIdAndUpdate(req.params.id, updatedData, { new: true });
+    const updatedRoom = await Room.findByIdAndUpdate(req.params.id, updatedData, {
+      new: true,
+      runValidators: true,
+    }).populate('hotelId', 'name city slug');
 
     // ✅ AUDIT LOG
     const statusChanged = updatedData.status && updatedData.status !== previousStatus;
@@ -129,7 +174,7 @@ const updateRoom = async (req, res) => {
 
     res.status(200).json({ message: 'Room updated successfully', room: updatedRoom });
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    handleRoomError(err, res);
   }
 };
 
