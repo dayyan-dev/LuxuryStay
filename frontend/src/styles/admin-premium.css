@@ -382,7 +382,8 @@ body > .modal.show.d-block,
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  min-width: 250px;
+  min-width: 240px;
+  max-width: calc(100vw - 24px);
   background: var(--ls-white);
   border: 1px solid var(--ls-border);
   border-radius: 14px;
@@ -487,6 +488,15 @@ body > .modal.show.d-block,
   .admin-main .form-select-sm, .admin-main .form-control-sm { min-height: 42px; }
   .admin-main .card-body { padding: 1.05rem; }
   .admin-main .card-header { padding: 0.9rem 1.05rem; }
+}
+@media (max-width: 575.98px) {
+  .admin-navbar {
+    padding: 0 0.75rem !important;
+    gap: 0.45rem !important;
+  }
+  .ls-auth-card {
+    padding: 1.75rem 1.25rem;
+  }
 }
 
 /* ── Auth pages (admin login / user login / register) ───────────────────── */

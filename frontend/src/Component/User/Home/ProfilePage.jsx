@@ -850,12 +850,21 @@ const PROFILE_STYLES = `
     .booking-img-wrap { width: 100%; min-height: 160px; }
     .booking-meta-grid { grid-template-columns: repeat(2, 1fr); }
     .profile-stats { grid-template-columns: repeat(3, 1fr); }
+    .profile-bookings-header { padding: 20px 18px 0; }
+    .profile-bookings-body { padding: 16px 18px 20px; }
+    .profile-tabs { overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+    .profile-tabs::-webkit-scrollbar { display: none; }
     .order-modal { border-radius: 20px; }
     .order-modal-header { padding: 18px 20px; }
     .order-category-bar { padding: 12px 16px; }
     .order-menu-scroll { padding: 16px 20px; }
     .order-modal-footer { padding: 14px 20px; flex-direction: column; align-items: stretch; }
     .order-place-btn { text-align: center; }
+  }
+
+  @media (max-width: 480px) {
+    .profile-stats { grid-template-columns: repeat(2, 1fr); }
+    .profile-stat-item:last-child { grid-column: 1 / -1; }
   }
 `;
 

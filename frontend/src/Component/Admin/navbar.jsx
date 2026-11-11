@@ -106,7 +106,7 @@ const Navbar = ({ collapsed, sidebarOpen, onToggleSidebar, onCollapse, onLogout,
       </button>
 
       <form
-        className="admin-nav-search ls-admin-search"
+        className="admin-nav-search ls-admin-search d-none d-sm-block"
         style={{ flex: 1, maxWidth: 420, minWidth: 0 }}
         onSubmit={(e) => { e.preventDefault(); runSearch(); }}
       >

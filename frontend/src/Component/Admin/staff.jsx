@@ -205,27 +205,34 @@ const Staff = () => {
 
       {/* Table */}
       <div className="card">
-        <div className="card-header d-flex align-items-center gap-2">
-          <h5 className="card-title mb-0 flex-grow-1">Staff Members</h5>
+        <div className="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <h5 className="card-title mb-0">Staff Members</h5>
 
-          {/* Search */}
-          <input
-            type="text"
-            className="form-control form-control-sm w-auto"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+          <div className="d-flex align-items-center flex-wrap gap-2">
+            {/* Search */}
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              style={{ minWidth: 0, width: 'min(220px, 100%)' }}
+              placeholder="Search by name or email..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
 
-          {/* Role Filter */}
-          <select className="form-select form-select-sm w-auto" value={filterRole} onChange={e => setFilterRole(e.target.value)}>
-            <option value="">All Roles</option>
-            <option value="manager">Manager</option>
-            <option value="receptionist">Receptionist</option>
-            <option value="housekeeping">Housekeeping</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="kitchen">Kitchen Staff</option>
-          </select>
+            {/* Role Filter */}
+            <select
+              className="form-select form-select-sm w-auto"
+              value={filterRole}
+              onChange={e => setFilterRole(e.target.value)}
+            >
+              <option value="">All Roles</option>
+              <option value="manager">Manager</option>
+              <option value="receptionist">Receptionist</option>
+              <option value="housekeeping">Housekeeping</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="kitchen">Kitchen Staff</option>
+            </select>
+          </div>
         </div>
         <div className="card-body">
           <div className="table-responsive">

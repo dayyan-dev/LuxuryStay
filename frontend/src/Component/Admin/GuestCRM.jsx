@@ -186,7 +186,7 @@ const GuestCRM = () => {
         {selected && (
           <div className="col-md-7">
             <div className="card">
-              <div className="card-header d-flex align-items-center justify-content-between">
+              <div className="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div className="d-flex align-items-center gap-2">
                   <span className="fw-semibold">{selected.user.name}</span>
                   {selected.profile.isVIP && <span className="badge bg-warning-subtle text-warning">👑 VIP</span>}
