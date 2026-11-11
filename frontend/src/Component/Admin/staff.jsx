@@ -4,8 +4,13 @@ import api from '../../api/authApi';
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5001/api');
 
 const Staff = () => {
-  const token = localStorage.getItem('token');
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const getHeaders = () => {
+    const t = localStorage.getItem('token');
+    const base = { 'Content-Type': 'application/json' };
+    return t && t !== 'null' && t !== 'undefined'
+      ? { ...base, Authorization: `Bearer ${t}` }
+      : base;
+  };
 
   const [staff, setStaff] = useState([]);
   const [filter, setFilter] = useState([]);
@@ -37,7 +42,7 @@ const Staff = () => {
 
   const loadStaff = async () => {
     try {
-      const res = await api.get(`${API_URL}/auth/users`, { headers });
+      const res = await api.get(`${API_URL}/auth/users`, { headers: getHeaders() });
       const staffOnly = (res.data.users || []).filter(u =>
         ['manager', 'receptionist', 'housekeeping', 'maintenance', 'kitchen'].includes(u.role)
       );
@@ -106,7 +111,7 @@ const Staff = () => {
       await api.post(
         `${API_URL}/auth/staff`,
         { name, email, phone, password, role },
-        { headers }
+        { headers: getHeaders() }
       );
       setShowAddModal(false);
       setAddForm({ name: '', email: '', phone: '', role: '', password: '' });
@@ -117,7 +122,7 @@ const Staff = () => {
   const handleEdit = async () => {
     setError('');
     try {
-      await api.put(`${API_URL}/auth/users/${selectedStaff._id}`, editForm, { headers });
+      await api.put(`${API_URL}/auth/users/${selectedStaff._id}`, editForm, { headers: getHeaders() });
       setShowEditModal(false);
       loadStaff();
     } catch (err) { setError(err.response?.data?.message || 'Error updating staff.'); }
@@ -129,7 +134,7 @@ const Staff = () => {
       await api.put(
         `${API_URL}/auth/users/${selectedStaff._id}`,
         { status: 'inactive' },
-        { headers }
+        { headers: getHeaders() }
       );
       setShowDeactivateModal(false);
       loadStaff();
@@ -289,7 +294,7 @@ const Staff = () => {
                               onClick={async () => {
                                 if (!window.confirm(`Reactivate ${u.name}?`)) return;
                                 try {
-                                  await api.put(`${API_URL}/auth/users/${u._id}`, { status: 'active' }, { headers });
+                                  await api.put(`${API_URL}/auth/users/${u._id}`, { status: 'active' }, { headers: getHeaders() });
                                   loadStaff();
                                 } catch (err) {
                                   console.error(err);

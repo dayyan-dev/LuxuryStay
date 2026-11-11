@@ -45,6 +45,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  // Supports up to 10 concurrent sessions so logging in from another tab/device doesn't invalidate active tabs
+  refreshTokens: {
+    type: [String],
+    default: []
+  },
   twoFactorSecret: {
     type: String,
     default: null

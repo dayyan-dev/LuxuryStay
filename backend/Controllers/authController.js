@@ -63,6 +63,13 @@ const generateRefreshToken = (userId) => {
   );
 };
 
+// Store latest refresh token while retaining up to 10 active sessions per user
+const saveUserRefreshToken = (userId, refreshToken) =>
+  User.findByIdAndUpdate(userId, {
+    $set: { refreshToken },
+    $push: { refreshTokens: { $each: [refreshToken], $slice: -10 } },
+  });
+
 // ============================================================
 // REGISTER
 // ============================================================
@@ -315,7 +322,7 @@ const login = async (req, res) => {
 
     const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id);
-    await User.findByIdAndUpdate(user._id, { refreshToken });
+    await saveUserRefreshToken(user._id, refreshToken);
 
     await auditLog.log(req, {
       action: 'USER_LOGIN',
@@ -609,7 +616,9 @@ const refreshAccessToken = async (req, res) => {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     const user = await User.findById(decoded.id);
 
-    if (!user || user.refreshToken !== refreshToken) {
+    const hasValidRefresh =
+      user && (user.refreshToken === refreshToken || (user.refreshTokens || []).includes(refreshToken));
+    if (!hasValidRefresh) {
       return res.status(403).json({ success: false, message: 'Invalid refresh token.' });
     }
 
@@ -627,7 +636,14 @@ const refreshAccessToken = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.user._id, { refreshToken: null });
+    const bodyRefreshToken = req.body?.refreshToken;
+    if (bodyRefreshToken) {
+      await User.findByIdAndUpdate(req.user._id, {
+        $pull: { refreshTokens: bodyRefreshToken },
+      });
+    } else {
+      await User.findByIdAndUpdate(req.user._id, { refreshToken: null, refreshTokens: [] });
+    }
     await auditLog.log(req, {
       action: 'USER_LOGOUT',
       targetModel: 'User',
@@ -771,7 +787,7 @@ const verify2FA = async (req, res) => {
 
     const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id);
-    await User.findByIdAndUpdate(user._id, { refreshToken });
+    await saveUserRefreshToken(user._id, refreshToken);
 
     await auditLog.log(req, { action: 'USER_LOGIN', targetModel: 'User', targetId: user._id, description: `${user.name} (${user.role}) logged in with 2FA` });
 
@@ -821,6 +837,7 @@ const withdrawConsent = async (req, res) => {
     user.address = null;
     user.status = 'suspended';
     user.refreshToken = null;
+    user.refreshTokens = [];
     await user.save();
 
     await auditLog.log(req, {
