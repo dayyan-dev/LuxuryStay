@@ -140,7 +140,7 @@ const STYLES = `
   .menu-tab-btn:hover { border-color: ; color: ; transform: translateY(-1px); }
   .menu-tab-btn.active {
     background: linear-gradient(135deg, , var(--theme-primary-hover, #122642));
-    border-color: transparent; color: #FFFFFF;
+    border-color: transparent; color: var(--theme-primary, #1B365D);
     box-shadow: 0 6px 18px var(--theme-primary-soft, rgba(27, 54, 93, 0.35));
   }
   .menu-card {
@@ -189,7 +189,7 @@ const STYLES = `
   .menu-order-btn:hover {
     box-shadow: 0 6px 18px var(--theme-primary-soft, rgba(27, 54, 93, 0.45));
     transform: translateY(-1px);
-    color: #FFFFFF;
+    color: var(--theme-primary-hover, #122642);
   }
   .menu-modal-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.55);

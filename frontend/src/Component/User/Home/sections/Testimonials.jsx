@@ -1,4 +1,6 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../../../Context/AuthContext';
 
 const BASE_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:5001';
 
@@ -37,6 +39,8 @@ const FALLBACK = [
 ];
 
 export default function Testimonials() {
+  const { user, token } = useAuth();
+  const isLoggedIn = Boolean(user && token);
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -206,12 +210,38 @@ export default function Testimonials() {
           </div>
         )}
 
-        {/* <div className="fw-500 text-center mt-4 wow fadeInUp">
-          Share Your Experience{' '}
-          <a href="/contact" className="fw-600 link-primary link-offset-2 link-underline-opacity-100 link-underline-opacity-0-hover">
-            Leave a Review
-          </a>
-        </div> */}
+        <div className="fw-500 text-center mt-4 wow fadeInUp">
+          {isLoggedIn ? (
+            <>
+              Share Your Experience{' '}
+              <Link
+                to="/rooms#guest-feedback"
+                className="fw-600 link-primary link-offset-2 link-underline-opacity-100 link-underline-opacity-0-hover"
+              >
+                Write Feedback Below Rooms
+              </Link>
+            </>
+          ) : (
+            <>
+              Want to share your stay experience?{' '}
+              <Link
+                to="/register"
+                state={{ from: '/rooms#guest-feedback' }}
+                className="fw-600 link-primary link-offset-2 link-underline-opacity-100 link-underline-opacity-0-hover"
+              >
+                Register
+              </Link>
+              {' '}or{' '}
+              <Link
+                to="/user-login"
+                state={{ from: '/rooms#guest-feedback' }}
+                className="fw-600 link-primary link-offset-2 link-underline-opacity-100 link-underline-opacity-0-hover"
+              >
+                Sign In to Leave Feedback
+              </Link>
+            </>
+          )}
+        </div>
 
       </div>
     </section>

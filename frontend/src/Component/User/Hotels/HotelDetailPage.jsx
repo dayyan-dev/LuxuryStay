@@ -98,7 +98,7 @@ export default function HotelDetailPage() {
                 {hotel.city}, Pakistan — LuxuryStay 5-Star Hotel
               </span>
               <h1 className="ls-serif text-white display-5 fw-bold mb-1">{hotel.name}</h1>
-              <p className="text-muted mb-0 small">
+              <p className="mb-0 small" style={{ color: 'var(--ls-white-50)' }}>
                 <i className="fa-solid fa-location-dot me-1 text-gold" style={{ color: 'var(--ls-gold)' }}></i> {hotel.address}
               </p>
             </div>

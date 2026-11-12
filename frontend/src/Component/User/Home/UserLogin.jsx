@@ -194,7 +194,7 @@ const UserLogin = () => {
 
             <p style={{ textAlign: 'center', color: 'var(--ls-gray)', fontSize: '0.9rem', margin: '1.5rem 0 0' }}>
               Don't have an account?{' '}
-              <Link to="/register" style={{ color: 'var(--ls-gold-dark)', fontWeight: 600 }}>
+              <Link to="/register" state={location.state} style={{ color: 'var(--ls-gold-dark)', fontWeight: 600 }}>
                 Create one
               </Link>
             </p>

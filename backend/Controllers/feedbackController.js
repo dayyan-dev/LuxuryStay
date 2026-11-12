@@ -1,12 +1,14 @@
 // ===== feedbackController.js (Controller) =====
 
+const jwt = require('jsonwebtoken');
 const Feedback = require('../Models/Feedback');
 const Booking = require('../Models/Booking');
+const User = require('../Models/User');
 
 // POST /api/feedbacks
 const submitFeedback = async (req, res) => {
   try {
-    const { name, email, phone, rating, review, userId, bookingId } = req.body;
+    const { name, email, phone, rating, review, userId, bookingId, roomName } = req.body;
 
     // Validation
     if (!rating || Number(rating) < 1 || Number(rating) > 5) {
@@ -16,16 +18,36 @@ const submitFeedback = async (req, res) => {
       return res.status(400).json({ error: "Review required hai" });
     }
 
+    // Attach verified user details if Bearer token is sent
+    let authUser = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      if (token && token !== 'null' && token !== 'undefined' && process.env.JWT_SECRET) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          if (decoded?.id) {
+            authUser = await User.findById(decoded.id).select('name email phone');
+          }
+        } catch {
+          // Allow fallback to submitted fields when token is absent/expired
+        }
+      }
+    }
+
     const feedbackData = {
-      name: name || "Guest",
-      email: email || "",
-      phone: phone || "",
+      name: (name || authUser?.name || "Guest").trim(),
+      email: (email || authUser?.email || "").trim(),
+      phone: (phone || authUser?.phone || "").trim(),
+      roomName: typeof roomName === 'string' ? roomName.trim() : "",
       rating: Number(rating),
       review: review.trim(),
     };
 
-    // userId sirf tab add karo jab valid MongoDB ObjectId ho
-    if (userId && /^[a-fA-F0-9]{24}$/.test(userId)) {
+    // userId: prefer verified JWT user, otherwise valid MongoDB ObjectId from body
+    if (authUser?._id) {
+      feedbackData.userId = authUser._id;
+    } else if (userId && /^[a-fA-F0-9]{24}$/.test(userId)) {
       feedbackData.userId = userId;
     }
 
@@ -115,7 +137,7 @@ const getPublicFeedbacks = async (req, res) => {
     const feedbacks = await Feedback.find({
       review: { $exists: true, $ne: '', $not: /^\[Guest Inquiry\]/i },
     })
-      .select('name rating review adminReply repliedAt createdAt')
+      .select('name roomName rating review adminReply repliedAt createdAt')
       .sort({ createdAt: -1 })
       .limit(20);
 

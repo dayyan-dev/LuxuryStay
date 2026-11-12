@@ -7,6 +7,7 @@ import useRoomsTemplateEffects from '../../../hooks/useRoomsTemplateEffects';
 // Sections Imports
 import RoomsHero from './sections/RoomsHero'; 
 import RoomsList from './sections/RoomsList'; 
+import GuestFeedbackSection from './sections/GuestFeedbackSection';
 import HomeAmenities from './sections/HomeAmenities';
 import AvailabilitySection from './sections/AvailabilitySection';
 
@@ -32,6 +33,8 @@ const RoomsPage = () => {
           <RoomsList rooms={rooms} loading={loading} />
         )}
 
+        {/* 3. Verified Guest Reviews & Leave Feedback Section */}
+        <GuestFeedbackSection rooms={rooms} />
        
       </div>
     </div>

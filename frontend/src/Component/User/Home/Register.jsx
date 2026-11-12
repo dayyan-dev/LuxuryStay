@@ -1,6 +1,6 @@
 // src/Component/User/Home/Register.jsx
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { registerUser, verifyEmailOtp, resendEmailOtp } from '../../../api/authApi.js';
 
 const EMAIL_RE =
@@ -171,6 +171,7 @@ function validateConfirm(password, confirm) {
 
 const Register = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -323,7 +324,7 @@ const Register = () => {
         );
       } else if (data.success) {
         showPopup('success', data.message || 'Registration successful! Please login.');
-        setTimeout(() => navigate('/user-login'), 1500);
+        setTimeout(() => navigate('/user-login', { state: location.state }), 1500);
       } else {
         showPopup('error', data.message || 'Registration failed.');
       }
@@ -348,7 +349,7 @@ const Register = () => {
       const data = await verifyEmailOtp({ email: pendingEmail, otp: code });
       if (data.success) {
         showPopup('success', data.message || 'Email verified! You can sign in.');
-        setTimeout(() => navigate('/user-login'), 1200);
+        setTimeout(() => navigate('/user-login', { state: location.state }), 1200);
       } else {
         setOtpError(data.message || 'Verification failed.');
       }
@@ -791,7 +792,7 @@ const Register = () => {
               }}
             >
               Already have an account?{' '}
-              <Link to="/user-login" style={{ color: 'var(--ls-gold-dark)', fontWeight: 600 }}>
+              <Link to="/user-login" state={location.state} style={{ color: 'var(--ls-gold-dark)', fontWeight: 600 }}>
                 Sign in
               </Link>
             </p>

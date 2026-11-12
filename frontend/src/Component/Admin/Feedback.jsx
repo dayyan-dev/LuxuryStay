@@ -29,7 +29,8 @@ const Feedback = () => {
       const q = search.toLowerCase();
       result = result.filter(
         (f) =>
-          (f.userId?.name || "").toLowerCase().includes(q) ||
+          (f.userId?.name || f.name || "").toLowerCase().includes(q) ||
+          (f.userId?.email || f.email || "").toLowerCase().includes(q) ||
           (f.review || "").toLowerCase().includes(q),
       );
     }
@@ -197,7 +198,7 @@ const Feedback = () => {
                   </tr>
                 ) : (
                   filter.map((f, i) => {
-                    const name = f.userId?.name || "Guest";
+                    const name = f.userId?.name || f.name || "Guest";
                     const initials = name
                       .split(" ")
                       .map((n) => n[0])
@@ -220,7 +221,7 @@ const Feedback = () => {
                             <div>
                               <div className="fw-medium">{name}</div>
                               <small className="text-muted">
-                                {f.userId?.email || ""}
+                                {f.userId?.email || f.email || ""}
                               </small>
                             </div>
                           </div>
@@ -292,17 +293,17 @@ const Feedback = () => {
                     <div className="p-3 bg-light rounded d-flex align-items-center gap-3">
                       <div className="avatar-sm">
                         <span className="avatar-title rounded-circle bg-primary text-white fw-bold">
-                          {(selected.userId?.name || "G")
+                          {(selected.userId?.name || selected.name || "G")
                             .charAt(0)
                             .toUpperCase()}
                         </span>
                       </div>
                       <div>
                         <h6 className="mb-0 fw-semibold">
-                          {selected.userId?.name || "Guest"}
+                          {selected.userId?.name || selected.name || "Guest"}
                         </h6>
                         <small className="text-muted">
-                          {selected.userId?.email || "—"}
+                          {selected.userId?.email || selected.email || "—"}
                         </small>
                       </div>
                     </div>

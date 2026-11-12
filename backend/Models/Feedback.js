@@ -18,6 +18,7 @@ const feedbackSchema = new mongoose.Schema({
   name: { type: String, default: "Guest" },
   email: { type: String, default: "" },
   phone: { type: String, default: "" },
+  roomName: { type: String, default: "" },
   rating: {
     type: Number,
     min: 1,
