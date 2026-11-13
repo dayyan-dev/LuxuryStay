@@ -254,10 +254,30 @@ const STYLES = `
   }
 `;
 
+const DEFAULT_TAB_ICONS = {
+  desi: 'fa-bowl-rice',
+  italian: 'fa-pizza-slice',
+  chinese: 'fa-utensils',
+  fastfood: 'fa-burger',
+  fast_food: 'fa-burger',
+  bbq: 'fa-fire-burner',
+  beverages: 'fa-wine-glass',
+  dessert: 'fa-cake-candles',
+  desserts: 'fa-cake-candles',
+  breakfast: 'fa-egg',
+  seafood: 'fa-fish',
+};
+
+const getTabIcon = (name) => {
+  const key = String(name || '').toLowerCase().replace(/[^a-z]/g, '');
+  return DEFAULT_TAB_ICONS[key] || 'fa-utensils';
+};
+
 const RestaurantMenu = () => {
   const { user, token } = useAuth();
 
   const [menuData, setMenuData] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [activeTab, setActiveTab] = useState("Desi");
   const [loading, setLoading] = useState(true);
   const [guestName, setGuestName] = useState("");
@@ -276,16 +296,30 @@ const RestaurantMenu = () => {
 
   useEffect(() => {
     let isMounted = true;
-    const fetchMenu = async () => {
+    const fetchMenuAndCategories = async () => {
       try {
-        const res = await fetch(`${API_URL}/restaurant/menu`);
-        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-        const data = await res.json();
-        if (isMounted) {
-          if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-            setMenuData(data.data);
-          } else {
-            setMenuData(DEFAULT_MENU_ITEMS);
+        const [menuRes, catRes] = await Promise.all([
+          fetch(`${API_URL}/restaurant/menu`),
+          fetch(`${API_URL}/restaurant/menu/categories`),
+        ]);
+
+        if (menuRes.ok) {
+          const data = await menuRes.json();
+          if (isMounted) {
+            if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+              setMenuData(data.data);
+            } else {
+              setMenuData(DEFAULT_MENU_ITEMS);
+            }
+          }
+        } else if (isMounted) {
+          setMenuData(DEFAULT_MENU_ITEMS);
+        }
+
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          if (isMounted && catData.data && Array.isArray(catData.data)) {
+            setCategories(catData.data);
           }
         }
       } catch (err) {
@@ -298,7 +332,7 @@ const RestaurantMenu = () => {
       }
     };
 
-    fetchMenu();
+    fetchMenuAndCategories();
     return () => {
       isMounted = false;
     };
@@ -426,6 +460,25 @@ const RestaurantMenu = () => {
     }
   };
 
+  // Build tabs dynamically from categories or distinct menuData categories
+  const dynamicTabs = React.useMemo(() => {
+    const names = Array.from(
+      new Set([
+        ...categories.map(c => c.name),
+        ...menuData.map(i => i.category),
+        'Desi', 'Italian', 'Chinese', 'Fast Food'
+      ].filter(Boolean))
+    );
+    return names.map(name => {
+      const matchDefault = TABS.find(t => t.key.toLowerCase() === name.toLowerCase());
+      return {
+        key: name,
+        label: matchDefault ? matchDefault.label : name,
+        icon: matchDefault ? matchDefault.icon : getTabIcon(name),
+      };
+    });
+  }, [categories, menuData]);
+
   // Match category flexibly
   const filterMenu = menuData.filter((item) => {
     const itemCat = (item.category || "").replace(/\s/g, "").toLowerCase();
@@ -545,7 +598,7 @@ const RestaurantMenu = () => {
 
           {/* Category Tabs */}
           <div className="menu-tabs">
-            {TABS.map((tab) => (
+            {dynamicTabs.map((tab) => (
               <button
                 key={tab.key}
                 className={`menu-tab-btn ${activeTab === tab.key ? "active" : ""}`}
@@ -571,9 +624,9 @@ const RestaurantMenu = () => {
               <p style={{ fontSize: "16px" }}>No dishes listed in this category at this moment.</p>
               <button
                 className="btn btn-outline-secondary btn-sm rounded-pill mt-2"
-                onClick={() => setActiveTab("Desi")}
+                onClick={() => setActiveTab(dynamicTabs[0]?.key || "Desi")}
               >
-                View Desi Specialties
+                View {dynamicTabs[0]?.label || "Menu"}
               </button>
             </div>
           ) : (

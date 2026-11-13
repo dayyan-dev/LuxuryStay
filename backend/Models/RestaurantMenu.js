@@ -16,8 +16,8 @@ const RestaurantMenu = new mongoose.Schema({
 
   category: {
     type: String,
-    enum: ["Desi", "Italian", "Chinese", "FastFood"],
-    required: true
+    required: true,
+    trim: true
   },
 
   image: String,

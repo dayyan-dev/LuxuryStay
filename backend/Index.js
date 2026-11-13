@@ -105,6 +105,10 @@ const restaurantMenuRoutes = require('./Routes/restaurantMenuRoutes');
 const restaurantOrderRoutes = require('./Routes/restaurantOrderRoutes');
 app.use('/api/restaurant/menu', restaurantMenuRoutes);
 app.use('/api/restaurant/orders', restaurantOrderRoutes);
+app.use('/api/restaurant/categories', (req, res, next) => {
+  req.url = '/categories' + (req.url === '/' ? '' : req.url);
+  restaurantMenuRoutes(req, res, next);
+});
 
 // Notifications & Content
 const notificationRoutes = require('./Routes/notificationRoutes');

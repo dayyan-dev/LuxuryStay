@@ -3,7 +3,7 @@ import api from '../../api/authApi';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 const BASE_URL = (process.env.REACT_APP_SERVER_URL || 'http://localhost:5001');
-const CATEGORIES = ['Desi', 'Italian', 'Chinese', 'FastFood'];
+
 const DIETARY_TAGS = [
   { value: 'spicy',   label: '🌶 Spicy' },
   { value: 'veg',     label: '🥗 Veg' },
@@ -11,12 +11,19 @@ const DIETARY_TAGS = [
   { value: 'halal',   label: '✅ Halal' },
 ];
 
+const COLOR_PALETTE = [
+  '#fd7e14', '#0dcaf0', '#d63384', '#198754',
+  '#4F46E5', '#D97706', '#E11D48', '#0891B2',
+  '#7C3AED', '#2563EB', '#059669', '#DB2777'
+];
+
 const RestaurantMenu = () => {
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
 
   const [items, setItems]               = useState([]);
-  const [filter, setFilter]         = useState([]);
+  const [categories, setCategories]     = useState([]);
+  const [filter, setFilter]             = useState([]);
   const [filterCategory, setFilterCategory] = useState('');
   const [search, setSearch]             = useState('');
   const [viewMode, setViewMode]         = useState('table'); // 'table' | 'card'
@@ -28,6 +35,18 @@ const RestaurantMenu = () => {
   const [error, setError]               = useState('');
   const [imageFile, setImageFile]       = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [isCustomCat, setIsCustomCat]   = useState(false);
+
+  // Manage Categories Modal State
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCatName, setNewCatName]               = useState('');
+  const [newCatDesc, setNewCatDesc]               = useState('');
+  const [newCatColor, setNewCatColor]             = useState('#1B365D');
+  const [savingCat, setSavingCat]                 = useState(false);
+  const [catError, setCatError]                   = useState('');
+  const [catSuccess, setCatSuccess]               = useState('');
+  const [catDeleteTarget, setCatDeleteTarget]     = useState(null);
+  const [deletingCat, setDeletingCat]             = useState(false);
 
   const emptyForm = {
     name: '', description: '', price: '',
@@ -35,7 +54,39 @@ const RestaurantMenu = () => {
   };
   const [form, setForm] = useState(emptyForm);
 
-  useEffect(() => { loadMenu(); }, []);
+  useEffect(() => {
+    loadMenu();
+    loadCategories();
+  }, []);
+
+  const loadMenu = async () => {
+    try {
+      const res = await api.get(`${API_URL}/restaurant/menu`, { headers });
+      setItems(res.data.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const res = await api.get(`${API_URL}/restaurant/menu/categories`);
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setCategories(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+    }
+  };
+
+  // Merge categories from DB and existing items
+  const allCategoryNames = Array.from(
+    new Set([
+      ...categories.map(c => c.name),
+      ...items.map(i => i.category),
+      'Desi', 'Italian', 'Chinese', 'FastFood'
+    ].filter(Boolean))
+  );
 
   useEffect(() => {
     let result = items;
@@ -50,17 +101,10 @@ const RestaurantMenu = () => {
     setFilter(result);
   }, [filterCategory, search, items]);
 
-  const loadMenu = async () => {
-    try {
-      const res = await api.get(`${API_URL}/restaurant/menu`, { headers });
-      setItems(res.data.data || []);
-    } catch (err) { console.error(err); }
-  };
-
   const stats = {
-    total:     items.length,
-    available: items.filter(i => i.isAvailable).length,
-    categories: [...new Set(items.map(i => i.category))].length,
+    total:      items.length,
+    available:  items.filter(i => i.isAvailable).length,
+    categories: allCategoryNames.length,
   };
 
   const formatPKR = (n) => 'PKR ' + Number(n).toLocaleString('en-PK');
@@ -71,7 +115,15 @@ const RestaurantMenu = () => {
     return `${BASE_URL}${item.image}`;
   };
 
-  // Image file select karo — preview bhi dikhao
+  const getCategoryColor = (catName) => {
+    if (!catName) return '#6c757d';
+    const found = categories.find(c => c.name.toLowerCase() === String(catName).toLowerCase());
+    if (found?.color) return found.color;
+    let hash = 0;
+    for (let i = 0; i < catName.length; i++) hash = catName.charCodeAt(i) + ((hash << 5) - hash);
+    return COLOR_PALETTE[Math.abs(hash) % COLOR_PALETTE.length];
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -102,6 +154,7 @@ const RestaurantMenu = () => {
       setShowAddModal(false);
       resetForm();
       loadMenu();
+      loadCategories();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to add item.');
     }
@@ -118,6 +171,7 @@ const RestaurantMenu = () => {
       setShowEditModal(false);
       resetForm();
       loadMenu();
+      loadCategories();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update item.');
     }
@@ -134,6 +188,7 @@ const RestaurantMenu = () => {
         setSelected(null);
       }
       loadMenu();
+      loadCategories();
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || 'Failed to delete menu item.');
@@ -142,8 +197,6 @@ const RestaurantMenu = () => {
     }
   };
 
-
-  // Quick availability toggle — table/card se seedha
   const handleToggleAvailable = async (item) => {
     try {
       const fd = new FormData();
@@ -158,6 +211,47 @@ const RestaurantMenu = () => {
     } catch (err) { console.error(err); }
   };
 
+  const handleAddCategory = async (e) => {
+    if (e) e.preventDefault();
+    setCatError('');
+    setCatSuccess('');
+    if (!newCatName.trim()) {
+      setCatError('Category name is required.');
+      return;
+    }
+    setSavingCat(true);
+    try {
+      const res = await api.post(
+        `${API_URL}/restaurant/menu/categories`,
+        { name: newCatName.trim(), description: newCatDesc.trim(), color: newCatColor },
+        { headers }
+      );
+      setCatSuccess(`Category "${res.data?.data?.name || newCatName}" added successfully!`);
+      setNewCatName('');
+      setNewCatDesc('');
+      loadCategories();
+    } catch (err) {
+      setCatError(err.response?.data?.message || 'Failed to add category.');
+    } finally {
+      setSavingCat(false);
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!catDeleteTarget?._id) return;
+    setDeletingCat(true);
+    try {
+      await api.delete(`${API_URL}/restaurant/menu/categories/${catDeleteTarget._id}`, { headers });
+      setCatDeleteTarget(null);
+      loadCategories();
+      loadMenu();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete category.');
+    } finally {
+      setDeletingCat(false);
+    }
+  };
+
   const openEdit = (item) => {
     setSelected(item);
     setForm({
@@ -168,6 +262,7 @@ const RestaurantMenu = () => {
       isAvailable: item.isAvailable,
       dietaryTags: item.dietaryTags || [],
     });
+    setIsCustomCat(!allCategoryNames.includes(item.category));
     setImageFile(null);
     setImagePreview(getImageSrc(item) || '');
     setError('');
@@ -178,6 +273,7 @@ const RestaurantMenu = () => {
     setForm(emptyForm);
     setImageFile(null);
     setImagePreview('');
+    setIsCustomCat(false);
   };
 
   const toggleDietaryTag = (tag) => {
@@ -189,11 +285,6 @@ const RestaurantMenu = () => {
     }));
   };
 
-  const categoryBadgeColor = {
-    Desi: '#fd7e14', Italian: '#0dcaf0',
-    Chinese: '#d63384', FastFood: '#198754'
-  };
-
   return (
     <div className="container-fluid">
       {/* Header */}
@@ -201,9 +292,30 @@ const RestaurantMenu = () => {
         <div className="col-12">
           <div className="page-title-box d-sm-flex align-items-center justify-content-between">
             <h4 className="mb-sm-0">Restaurant Menu</h4>
-            <button className="btn btn-success" onClick={() => { resetForm(); setError(''); setShowAddModal(true); }}>
-              <i className="ri-add-line me-1"></i> Add Menu Item
-            </button>
+            <div className="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                onClick={() => {
+                  setCatError('');
+                  setCatSuccess('');
+                  setShowCategoryModal(true);
+                }}
+              >
+                <i className="ri-folder-settings-line"></i> Manage Categories ({allCategoryNames.length})
+              </button>
+              <button
+                type="button"
+                className="btn btn-success btn-sm"
+                onClick={() => {
+                  resetForm();
+                  setError('');
+                  setShowAddModal(true);
+                }}
+              >
+                <i className="ri-add-line me-1"></i> Add Menu Item
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -235,7 +347,7 @@ const RestaurantMenu = () => {
         ))}
       </div>
 
-      {/* Table / Card */}
+      {/* Table / Card Container */}
       <div className="card">
         <div className="card-header d-flex align-items-center flex-wrap gap-2">
           <h5 className="card-title mb-0 flex-grow-1">Menu Items</h5>
@@ -250,26 +362,35 @@ const RestaurantMenu = () => {
           />
 
           {/* Category Filter */}
-          <select className="form-select form-select-sm w-auto" value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
-            <option value="">All Categories</option>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          <select
+            className="form-select form-select-sm w-auto"
+            value={filterCategory}
+            onChange={e => setFilterCategory(e.target.value)}
+          >
+            <option value="">All Categories ({items.length})</option>
+            {allCategoryNames.map(c => {
+              const count = items.filter(it => it.category === c).length;
+              return (
+                <option key={c} value={c}>{c} ({count})</option>
+              );
+            })}
           </select>
 
           {/* View Toggle */}
           <div className="btn-group btn-group-sm">
             <button
-              className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-outline-primary'}`}
+              className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-outline-secondary'}`}
               onClick={() => setViewMode('table')}
               title="Table View"
             >
-              <i className="ri-list-check"></i>
+              <i className="ri-table-line"></i>
             </button>
             <button
-              className={`btn ${viewMode === 'card' ? 'btn-primary' : 'btn-outline-primary'}`}
+              className={`btn ${viewMode === 'card' ? 'btn-primary' : 'btn-outline-secondary'}`}
               onClick={() => setViewMode('card')}
               title="Card View"
             >
-              <i className="ri-layout-grid-line"></i>
+              <i className="ri-grid-line"></i>
             </button>
           </div>
         </div>
@@ -281,14 +402,14 @@ const RestaurantMenu = () => {
               <table className="table table-hover align-middle mb-0">
                 <thead className="table-light">
                   <tr>
-                    <th style={{width: 40}}>#</th>
-                    <th style={{width: 60}}>Image</th>
-                    <th>Name</th>
-                    <th style={{width: 100}}>Category</th>
-                    <th style={{width: 120}}>Tags</th>
-                    <th style={{width: 110}}>Price</th>
-                    <th style={{width: 100}}>Available</th>
-                    <th style={{width: 70}}>Actions</th>
+                    <th>#</th>
+                    <th>Image</th>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Dietary</th>
+                    <th>Price</th>
+                    <th>Available</th>
+                    <th style={{ width: 90 }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -319,7 +440,10 @@ const RestaurantMenu = () => {
                         )}
                       </td>
                       <td>
-                        <span className="badge text-white" style={{ backgroundColor: categoryBadgeColor[item.category] || '#6c757d' }}>
+                        <span
+                          className="badge text-white"
+                          style={{ backgroundColor: getCategoryColor(item.category) }}
+                        >
                           {item.category}
                         </span>
                       </td>
@@ -388,7 +512,7 @@ const RestaurantMenu = () => {
                       {/* Category badge on image */}
                       <span
                         className="badge text-white position-absolute"
-                        style={{ top: 8, left: 8, backgroundColor: categoryBadgeColor[item.category] || '#6c757d' }}
+                        style={{ top: 8, left: 8, backgroundColor: getCategoryColor(item.category) }}
                       >
                         {item.category}
                       </span>
@@ -415,7 +539,6 @@ const RestaurantMenu = () => {
 
                       <div className="d-flex align-items-center justify-content-between mt-2">
                         <span className="fw-bold text-success">{formatPKR(item.price)}</span>
-                        {/* Quick toggle */}
                         <div className="form-check form-switch mb-0">
                           <input
                             className="form-check-input"
@@ -456,7 +579,11 @@ const RestaurantMenu = () => {
               <div className="modal-body">
                 {error && <div className="alert alert-danger">{error}</div>}
                 <MenuForm
-                  form={form} setForm={setForm}
+                  form={form}
+                  setForm={setForm}
+                  categoryList={allCategoryNames}
+                  isCustomCat={isCustomCat}
+                  setIsCustomCat={setIsCustomCat}
                   imagePreview={imagePreview}
                   onImageChange={handleImageChange}
                   toggleDietaryTag={toggleDietaryTag}
@@ -464,7 +591,9 @@ const RestaurantMenu = () => {
               </div>
               <div className="modal-footer">
                 <button className="btn btn-light" onClick={() => { setShowAddModal(false); resetForm(); }}>Cancel</button>
-                <button className="btn btn-success" onClick={handleAdd}>Add Item</button>
+                <button className="btn btn-success" onClick={handleAdd}>
+                  <i className="ri-check-line me-1"></i>Save Item
+                </button>
               </div>
             </div>
           </div>
@@ -483,7 +612,11 @@ const RestaurantMenu = () => {
               <div className="modal-body">
                 {error && <div className="alert alert-danger">{error}</div>}
                 <MenuForm
-                  form={form} setForm={setForm}
+                  form={form}
+                  setForm={setForm}
+                  categoryList={allCategoryNames}
+                  isCustomCat={isCustomCat}
+                  setIsCustomCat={setIsCustomCat}
                   imagePreview={imagePreview}
                   onImageChange={handleImageChange}
                   toggleDietaryTag={toggleDietaryTag}
@@ -510,7 +643,218 @@ const RestaurantMenu = () => {
         </div>
       )}
 
-      {/* ── DELETE CONFIRMATION MODAL ── */}
+      {/* ── MANAGE CATEGORIES MODAL ── */}
+      {showCategoryModal && (
+        <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.55)', zIndex: 1055 }}>
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content shadow-lg border-0 rounded-4">
+              <div className="modal-header border-bottom">
+                <h5 className="modal-title fw-bold">
+                  <i className="ri-folder-settings-line text-primary me-2"></i>
+                  Menu Categories Manager
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowCategoryModal(false)}
+                />
+              </div>
+
+              <div className="modal-body p-4">
+                {catError && <div className="alert alert-danger py-2 fs-13 mb-3">{catError}</div>}
+                {catSuccess && <div className="alert alert-success py-2 fs-13 mb-3">{catSuccess}</div>}
+
+                {/* Add Category Card */}
+                <div className="card border bg-light mb-4 rounded-3">
+                  <div className="card-body p-3">
+                    <h6 className="fw-bold mb-3 text-dark">
+                      <i className="ri-add-circle-line text-success me-1"></i> Add Custom Category
+                    </h6>
+                    <form onSubmit={handleAddCategory}>
+                      <div className="row g-2 align-items-end">
+                        <div className="col-md-4">
+                          <label className="form-label fs-12 fw-semibold mb-1">
+                            Category Name <span className="text-danger">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="e.g. BBQ, Beverages, Desserts"
+                            value={newCatName}
+                            onChange={(e) => setNewCatName(e.target.value)}
+                          />
+                        </div>
+                        <div className="col-md-4">
+                          <label className="form-label fs-12 fw-semibold mb-1">Description (Optional)</label>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Short description"
+                            value={newCatDesc}
+                            onChange={(e) => setNewCatDesc(e.target.value)}
+                          />
+                        </div>
+                        <div className="col-md-2">
+                          <label className="form-label fs-12 fw-semibold mb-1">Badge Color</label>
+                          <div className="d-flex align-items-center gap-1">
+                            <input
+                              type="color"
+                              className="form-control form-control-color form-control-sm p-0 border-0"
+                              value={newCatColor}
+                              title="Choose category color"
+                              onChange={(e) => setNewCatColor(e.target.value)}
+                              style={{ width: 34, height: 31, cursor: 'pointer' }}
+                            />
+                            <span
+                              className="badge"
+                              style={{ backgroundColor: newCatColor, color: '#fff', fontSize: 10 }}
+                            >
+                              Preview
+                            </span>
+                          </div>
+                        </div>
+                        <div className="col-md-2">
+                          <button
+                            type="submit"
+                            disabled={savingCat}
+                            className="btn btn-primary btn-sm w-100"
+                          >
+                            {savingCat ? 'Adding...' : '+ Add'}
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                {/* Categories Table */}
+                <h6 className="fw-bold mb-2 text-dark d-flex align-items-center justify-content-between">
+                  <span>Current Categories ({categories.length})</span>
+                  <small className="text-muted fw-normal fs-12">Custom categories can be deleted if unused</small>
+                </h6>
+
+                <div className="table-responsive border rounded-3" style={{ maxHeight: 300, overflowY: 'auto' }}>
+                  <table className="table table-hover align-middle mb-0">
+                    <thead className="table-light sticky-top">
+                      <tr>
+                        <th>#</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th className="text-center">Dishes</th>
+                        <th className="text-center">Type</th>
+                        <th className="text-end">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {categories.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="text-center py-4 text-muted">
+                            No categories found.
+                          </td>
+                        </tr>
+                      ) : (
+                        categories.map((cat, i) => {
+                          const count = cat.itemCount || items.filter(it => it.category === cat.name).length || 0;
+                          return (
+                            <tr key={cat._id || cat.name}>
+                              <td>{i + 1}</td>
+                              <td>
+                                <span
+                                  className="badge text-white px-2 py-1"
+                                  style={{ backgroundColor: cat.color || getCategoryColor(cat.name), fontSize: 12 }}
+                                >
+                                  {cat.name}
+                                </span>
+                              </td>
+                              <td>
+                                <small className="text-muted">{cat.description || '—'}</small>
+                              </td>
+                              <td className="text-center">
+                                <span className="badge bg-secondary-subtle text-secondary">
+                                  {count}
+                                </span>
+                              </td>
+                              <td className="text-center">
+                                {cat.isDefault ? (
+                                  <span className="badge bg-light text-muted border" style={{ fontSize: 10 }}>Default</span>
+                                ) : (
+                                  <span className="badge bg-success-subtle text-success" style={{ fontSize: 10 }}>Custom</span>
+                                )}
+                              </td>
+                              <td className="text-end">
+                                <button
+                                  type="button"
+                                  className="btn btn-soft-danger btn-sm p-1 py-0"
+                                  title={count > 0 ? 'Cannot delete: items assigned' : 'Delete category'}
+                                  disabled={count > 0 || cat.isDefault}
+                                  onClick={() => setCatDeleteTarget(cat)}
+                                >
+                                  <i className="ri-delete-bin-line" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="modal-footer border-top">
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  onClick={() => setShowCategoryModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Category Confirmation Dialog */}
+      {catDeleteTarget && (
+        <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.6)', zIndex: 1065 }}>
+          <div className="modal-dialog modal-dialog-centered modal-sm">
+            <div className="modal-content shadow-lg border-0 text-center p-4">
+              <div
+                className="avatar-md mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: 50, height: 50, background: '#fee2e2', color: '#dc2626', fontSize: 22 }}
+              >
+                <i className="ri-delete-bin-line" />
+              </div>
+              <h5 className="fw-bold mb-1">Delete Category?</h5>
+              <p className="text-muted mb-2 fw-semibold">"{catDeleteTarget.name}"</p>
+              <div className="alert alert-warning py-2 fs-12 text-start">
+                Yeh custom category permanently delete ho jayegi.
+              </div>
+              <div className="d-flex gap-2 justify-content-center mt-3">
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  disabled={deletingCat}
+                  onClick={() => setCatDeleteTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  disabled={deletingCat}
+                  onClick={handleDeleteCategory}
+                >
+                  {deletingCat ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DELETE DISH CONFIRMATION MODAL ── */}
       {deleteTarget && (
         <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered modal-sm">
@@ -554,32 +898,125 @@ const RestaurantMenu = () => {
 };
 
 // ── FORM COMPONENT ──
-const MenuForm = ({ form, setForm, imagePreview, onImageChange, toggleDietaryTag }) => (
+const MenuForm = ({
+  form,
+  setForm,
+  categoryList,
+  isCustomCat,
+  setIsCustomCat,
+  imagePreview,
+  onImageChange,
+  toggleDietaryTag
+}) => (
   <div className="row g-3">
     {/* Name */}
-    <div className="col-md-6">
+    <div className="col-md-5">
       <label className="form-label">Name <span className="text-danger">*</span></label>
-      <input className="form-control" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Chicken Karahi" />
+      <input
+        className="form-control"
+        value={form.name}
+        onChange={e => setForm({ ...form, name: e.target.value })}
+        placeholder="e.g. Chicken Karahi"
+      />
     </div>
 
-    {/* Category */}
-    <div className="col-md-3">
-      <label className="form-label">Category <span className="text-danger">*</span></label>
-      <select className="form-select" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
-        {['Desi', 'Italian', 'Chinese', 'FastFood'].map(c => <option key={c} value={c}>{c}</option>)}
-      </select>
+    {/* Category with inline Custom option */}
+    <div className="col-md-4">
+      <div className="d-flex align-items-center justify-content-between mb-1">
+        <label className="form-label mb-0">Category <span className="text-danger">*</span></label>
+        {!isCustomCat ? (
+          <button
+            type="button"
+            className="btn btn-link btn-sm p-0 text-decoration-none"
+            style={{ fontSize: 11 }}
+            onClick={() => setIsCustomCat(true)}
+          >
+            + Add Custom
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-link btn-sm p-0 text-decoration-none text-secondary"
+            style={{ fontSize: 11 }}
+            onClick={() => {
+              setIsCustomCat(false);
+              if (!categoryList.includes(form.category)) {
+                setForm({ ...form, category: categoryList[0] || 'Desi' });
+              }
+            }}
+          >
+            Back to List
+          </button>
+        )}
+      </div>
+
+      {!isCustomCat ? (
+        <select
+          className="form-select"
+          value={form.category}
+          onChange={(e) => {
+            if (e.target.value === '__add_new__') {
+              setIsCustomCat(true);
+            } else {
+              setForm({ ...form, category: e.target.value });
+            }
+          }}
+        >
+          {categoryList.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+          <option value="__add_new__">+ Custom Category...</option>
+        </select>
+      ) : (
+        <div className="input-group">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Type new category..."
+            value={form.category}
+            autoFocus
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
+          />
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm"
+            title="Cancel custom"
+            onClick={() => {
+              setIsCustomCat(false);
+              if (!categoryList.includes(form.category)) {
+                setForm({ ...form, category: categoryList[0] || 'Desi' });
+              }
+            }}
+          >
+            <i className="ri-close-line" />
+          </button>
+        </div>
+      )}
     </div>
 
     {/* Price */}
     <div className="col-md-3">
       <label className="form-label">Price (PKR) <span className="text-danger">*</span></label>
-      <input type="number" className="form-control" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="0" min="0" />
+      <input
+        type="number"
+        className="form-control"
+        value={form.price}
+        onChange={e => setForm({ ...form, price: e.target.value })}
+        placeholder="0"
+        min="0"
+      />
     </div>
 
     {/* Description */}
     <div className="col-12">
       <label className="form-label">Description</label>
-      <textarea className="form-control" rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Brief description..." />
+      <textarea
+        className="form-control"
+        rows={2}
+        value={form.description}
+        onChange={e => setForm({ ...form, description: e.target.value })}
+        placeholder="Brief description..."
+      />
     </div>
 
     {/* Image Upload */}
@@ -597,12 +1034,7 @@ const MenuForm = ({ form, setForm, imagePreview, onImageChange, toggleDietaryTag
     <div className="col-12">
       <label className="form-label">Dietary Tags</label>
       <div className="d-flex flex-wrap gap-2">
-        {[
-          { value: 'spicy',   label: '🌶 Spicy' },
-          { value: 'veg',     label: '🥗 Veg' },
-          { value: 'non-veg', label: '🍗 Non-Veg' },
-          { value: 'halal',   label: '✅ Halal' },
-        ].map(tag => (
+        {DIETARY_TAGS.map(tag => (
           <button
             key={tag.value}
             type="button"
