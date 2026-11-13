@@ -4,6 +4,7 @@ const {
   register, verifyEmailOtp, resendEmailOtp,
   login, getProfile, getAllUsers, 
   updateUser, deleteUser, createWalkInGuest, createStaff,
+  getStaffCredentials, updateStaffCredentials, getStaffPortalInfo,
   updateOwnProfile, changePassword,
   refreshAccessToken, logout,
   setup2FA, enable2FA, verify2FA, disable2FA,
@@ -25,6 +26,10 @@ router.put('/users/:id', protect, adminOnly, updateUser);
 router.delete('/users/:id', protect, adminOnly, deleteUser);
 
 router.post('/staff', protect, adminOnly, createStaff);
+router.get('/staff-credentials', protect, adminOnly, getStaffCredentials);
+router.put('/staff/:id/credentials', protect, adminOnly, updateStaffCredentials);
+router.get('/staff-portal/:role/:slug', getStaffPortalInfo);
+router.get('/staff-portal/:role', getStaffPortalInfo);
 router.post('/walkin-guest', protect, staffRoles('admin', 'manager', 'receptionist'), createWalkInGuest);
 
 router.post('/refresh-token', refreshAccessToken);

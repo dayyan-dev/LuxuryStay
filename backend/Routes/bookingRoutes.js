@@ -16,6 +16,7 @@ const {
     downloadInvoice,
     emailInvoice,
     getRoomBookedDates,
+    deleteBooking,
   } = require('../Controllers/bookingController');
 
 const {
@@ -88,5 +89,8 @@ router.put('/:id/payment', protect, staffRoles('admin', 'manager', 'receptionist
 
 // Complete Booking
 router.put('/:id/complete', protect, staffRoles('admin', 'manager', 'receptionist'), completeBooking);
+
+// Delete Booking (Admin / Manager)
+router.delete('/:id', protect, staffRoles('admin', 'manager'), deleteBooking);
 
 module.exports = router;

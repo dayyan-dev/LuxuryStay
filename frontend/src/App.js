@@ -23,6 +23,8 @@ const BookingNew = lazy(() => import('./Component/Admin/BookingNew'));
 const CheckinCheckout = lazy(() => import('./Component/Admin/CheckinCheckout'));
 const Users = lazy(() => import('./Component/Admin/users'));
 const Staff = lazy(() => import('./Component/Admin/staff'));
+const StaffCredentials = lazy(() => import('./Component/Admin/StaffCredentials'));
+const StaffPortalLogin = lazy(() => import('./Component/Admin/StaffPortalLogin'));
 const Payments = lazy(() => import('./Component/Admin/payments'));
 const Housekeeping = lazy(() => import('./Component/Admin/housekeeping'));
 const Maintenance = lazy(() => import('./Component/Admin/Maintenance'));
@@ -99,7 +101,7 @@ function RoleBasedRedirect() {
   if (role === 'housekeeping')                  return <Navigate to="/admin/housekeeping"      replace />;
   if (role === 'maintenance')                   return <Navigate to="/admin/maintenance"       replace />;
   if (role === 'kitchen')                       return <Navigate to="/admin/restaurant-orders" replace />;
-  return <Navigate to="/admin/login" replace />;
+  return <Navigate to="/luxurystaypanel/login" replace />;
 }
 
 function RoleRoute({ roles, children }) {
@@ -116,16 +118,35 @@ function App() {
 
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            {/* Root irect */}
+            {/* Root redirect */}
             <Route path="/" element={<Navigate to="/home" replace />} />
 
-            {/* Admin / Staff login (both /login and /admin/login supported) */}
+            {/* Admin / Staff login (supports /luxurystaypanel/login, /admin/login, and /login) */}
+            <Route path="/luxurystaypanel/login" element={<Login />} />
+            <Route path="/luxurystaypanel" element={<Navigate to="/luxurystaypanel/login" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin/login" element={<Login />} />
 
-            {/* User Auth routes */}
+            {/* Guest / User Auth routes — /luxurystay/login & /luxurystay/register */}
+            <Route path="/luxurystay/login" element={<UserLogin />} />
+            <Route path="/luxurystay/register" element={<Register />} />
+            {/* Backwards compatibility aliases */}
             <Route path="/user-login" element={<UserLogin />} />
             <Route path="/register" element={<Register />} />
+
+            {/* Dedicated Role & Staff Portal Login URLs (e.g. /manager/ali, /receptionist/sohail-gul) */}
+            <Route path="/manager/:slug" element={<StaffPortalLogin role="manager" />} />
+            <Route path="/receptionist/:slug" element={<StaffPortalLogin role="receptionist" />} />
+            <Route path="/housekeeping/:slug" element={<StaffPortalLogin role="housekeeping" />} />
+            <Route path="/maintenance/:slug" element={<StaffPortalLogin role="maintenance" />} />
+            <Route path="/kitchen/:slug" element={<StaffPortalLogin role="kitchen" />} />
+            <Route path="/portal/:role/:slug" element={<StaffPortalLogin />} />
+            <Route path="/portal/:role" element={<StaffPortalLogin />} />
+            <Route path="/manager" element={<StaffPortalLogin role="manager" />} />
+            <Route path="/receptionist" element={<StaffPortalLogin role="receptionist" />} />
+            <Route path="/housekeeping" element={<StaffPortalLogin role="housekeeping" />} />
+            <Route path="/maintenance" element={<StaffPortalLogin role="maintenance" />} />
+            <Route path="/kitchen" element={<StaffPortalLogin role="kitchen" />} />
 
             {/* User routes */}
             <Route path="/" element={<UserLayout />}>
@@ -157,6 +178,7 @@ function App() {
               <Route path="checkin-checkout" element={<RoleRoute roles={['admin','manager','receptionist']}><CheckinCheckout /></RoleRoute>} />
               <Route path="users" element={<RoleRoute roles={['admin']}><Users /></RoleRoute>} />
               <Route path="staff" element={<RoleRoute roles={['admin']}><Staff /></RoleRoute>} />
+              <Route path="staff-credentials" element={<RoleRoute roles={['admin']}><StaffCredentials /></RoleRoute>} />
               <Route path="payments" element={<RoleRoute roles={['admin','manager']}><Payments /></RoleRoute>} />
               <Route path="housekeeping" element={<RoleRoute roles={['admin','manager','housekeeping']}><Housekeeping /></RoleRoute>} />
               <Route path="maintenance" element={<RoleRoute roles={['admin','manager','maintenance']}><Maintenance /></RoleRoute>} />

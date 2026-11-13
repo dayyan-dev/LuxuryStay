@@ -251,7 +251,7 @@ export default function Footer() {
                 { to: '/contact', label: 'Guest Support' },
                 { to: '/faq', label: 'FAQ & Policies' },
                 { to: '/about', label: 'About LuxuryStay' },
-                { to: '/login', label: 'Staff Portal' },
+                { to: '/luxurystaypanel/login', label: 'Staff Portal' },
               ].map((item) => (
                 <li key={item.label} style={{ marginBottom: '0.7rem' }}>
                   <NavLink

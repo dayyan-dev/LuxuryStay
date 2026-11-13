@@ -523,14 +523,30 @@ const STAFF_ROLES = ['manager', 'receptionist', 'housekeeping', 'maintenance', '
 // ============================================================
 const createStaff = async (req, res) => {
   try {
-    const { name, email, phone, password, role } = req.body;
+    let { name, email, phone, password, role } = req.body;
 
-    if (!name || !email || !phone || !password || !role) {
-      return res.status(400).json({ success: false, message: 'Name, email, phone, password and role are required.' });
+    if (!name || !email || !phone || !role) {
+      return res.status(400).json({ success: false, message: 'Name, email, phone and role are required.' });
     }
     if (!STAFF_ROLES.includes(role)) {
       return res.status(400).json({ success: false, message: 'Invalid staff role.' });
     }
+
+    // Auto-generate strong random password if not provided
+    if (!password || !password.trim()) {
+      const randUpper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+      const randLower = 'abcdefghjkmnpqrstuvwxyz';
+      const randDigits = '23456789';
+      const randSpecial = '!@#$%&*';
+      const pick = (chars) => chars[Math.floor(Math.random() * chars.length)];
+      password =
+        pick(randUpper) +
+        pick(randLower) +
+        pick(randDigits) +
+        pick(randSpecial) +
+        Array.from({ length: 6 }, () => pick(randLower + randDigits)).join('');
+    }
+
     if (password.length < 8) {
       return res.status(400).json({ success: false, message: 'Password must be at least 8 characters.' });
     }
@@ -544,12 +560,22 @@ const createStaff = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Phone number already registered.' });
     }
 
+    // Generate unique portal slug from staff name
+    const baseSlug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `staff-${Date.now()}`;
+    let portalSlug = baseSlug;
+    let count = 1;
+    while (await User.findOne({ portalSlug })) {
+      portalSlug = `${baseSlug}-${count++}`;
+    }
+
     const hashedPassword = await bcrypt.hash(password, 12);
     const user = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       phone,
       password: hashedPassword,
+      initialPassword: password, // preserved for admin credentials review
+      portalSlug,
       role,
       consentAccepted: true,
       consentAcceptedAt: new Date(),
@@ -562,12 +588,164 @@ const createStaff = async (req, res) => {
       action: 'USER_REGISTER',
       targetModel: 'User',
       targetId: user._id,
-      description: `Admin created staff: ${user.name} (${user.role})`,
+      description: `Admin created staff: ${user.name} (${user.role}) with portal /${user.role}/${portalSlug}`,
     });
 
     const safe = user.toObject();
     delete safe.password;
-    res.status(201).json({ success: true, message: 'Staff account created.', user: safe });
+    res.status(201).json({
+      success: true,
+      message: 'Staff account created successfully.',
+      user: safe,
+      credentials: {
+        email: user.email,
+        password: password,
+        portalUrl: `/${role}/${portalSlug}`,
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+};
+
+// ============================================================
+// GET STAFF CREDENTIALS & PORTAL DIRECTORY (Admin)
+// ============================================================
+const getStaffCredentials = async (req, res) => {
+  try {
+    const staff = await User.find({ role: { $in: STAFF_ROLES } })
+      .select('name email phone role status initialPassword portalSlug createdAt updatedAt')
+      .sort({ createdAt: -1 });
+
+    const formatted = staff.map(u => {
+      const slug = u.portalSlug || u.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || String(u._id);
+      return {
+        _id: u._id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        role: u.role,
+        status: u.status,
+        password: u.initialPassword || '(Not saved - click reset)',
+        portalSlug: slug,
+        portalUrl: `/${u.role}/${slug}`,
+        createdAt: u.createdAt,
+      };
+    });
+
+    res.status(200).json({ success: true, staff: formatted });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+};
+
+// ============================================================
+// UPDATE STAFF CREDENTIALS / PASSWORD (Admin)
+// ============================================================
+const updateStaffCredentials = async (req, res) => {
+  try {
+    const { name, email, phone, role, status, password, portalSlug } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'Staff member not found.' });
+
+    if (name) user.name = name.trim();
+    if (email) user.email = email.toLowerCase().trim();
+    if (phone) user.phone = phone.trim();
+    if (role && STAFF_ROLES.includes(role)) user.role = role;
+    if (status) user.status = status;
+    if (portalSlug) user.portalSlug = portalSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    if (password && password.trim()) {
+      if (password.length < 8) {
+        return res.status(400).json({ success: false, message: 'Password must be at least 8 characters.' });
+      }
+      user.password = await bcrypt.hash(password.trim(), 12);
+      user.initialPassword = password.trim();
+    }
+
+    await user.save();
+
+    await auditLog.log(req, {
+      action: 'USER_UPDATED',
+      targetModel: 'User',
+      targetId: user._id,
+      description: `Admin updated credentials for staff: ${user.name} (${user.role})`,
+      severity: 'warning',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Staff credentials updated successfully.',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+        password: user.initialPassword,
+        portalSlug: user.portalSlug,
+        portalUrl: `/${user.role}/${user.portalSlug || user.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+};
+
+// ============================================================
+// GET STAFF PORTAL INFO (Public - for custom URL staff portal login)
+// ============================================================
+const getStaffPortalInfo = async (req, res) => {
+  try {
+    const { role, slug } = req.params;
+    const normalizedRole = (role || '').toLowerCase();
+
+    if (!STAFF_ROLES.includes(normalizedRole) && normalizedRole !== 'admin') {
+      return res.status(404).json({ success: false, message: 'Invalid staff portal role.' });
+    }
+
+    // If no slug or generic "login"/"portal", return general role portal metadata
+    if (!slug || slug === 'login' || slug === 'portal') {
+      return res.status(200).json({
+        success: true,
+        role: normalizedRole,
+        staff: null,
+      });
+    }
+
+    const cleanSlug = slug.toLowerCase().trim();
+    const query = {
+      role: normalizedRole,
+      status: { $ne: 'suspended' },
+      $or: [
+        { portalSlug: cleanSlug },
+        { name: new RegExp('^' + cleanSlug.replace(/-/g, ' ') + '$', 'i') },
+        { email: cleanSlug.includes('@') ? cleanSlug : new RegExp('^' + cleanSlug + '@', 'i') },
+      ]
+    };
+
+    const user = await User.findOne(query).select('name email role status portalSlug');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: `No active staff member found for ${normalizedRole} "${slug}".`,
+        role: normalizedRole,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      role: normalizedRole,
+      staff: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        portalSlug: user.portalSlug,
+      }
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
@@ -861,4 +1039,5 @@ module.exports = {
   setup2FAWithToken, enable2FAWithToken,
   getProfile, updateOwnProfile, changePassword,
   getAllUsers, updateUser, deleteUser, createWalkInGuest, createStaff,
+  getStaffCredentials, updateStaffCredentials, getStaffPortalInfo,
 };

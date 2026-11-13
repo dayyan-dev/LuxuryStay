@@ -124,7 +124,7 @@ const Login = () => {
       setGuestBlocked(true);
       setPopup({
         type: 'error',
-        message: 'Staff & Admin Portal only: Registered Guest accounts must sign in at Guest Login (/user-login).',
+        message: 'Staff & Admin Portal only: Registered Guest accounts must sign in at Guest Login (/luxurystay/login).',
       });
       return;
     }
@@ -336,10 +336,10 @@ const Login = () => {
                     <strong>Guest Account Detected:</strong> This portal is restricted to Hotel Staff &amp; Admin roles.
                   </div>
                   <Link
-                    to="/user-login"
+                    to="/luxurystay/login"
                     className="btn btn-sm btn-outline-dark align-self-start"
                   >
-                    Go to Guest Login (/user-login) &rarr;
+                    Go to Guest Login (/luxurystay/login) &rarr;
                   </Link>
                 </div>
               )}
@@ -417,16 +417,7 @@ const Login = () => {
               color: 'var(--color-text-secondary, #77766F)',
             }}
           >
-            <div className="d-flex align-items-center gap-1 fw-bold text-dark mb-1">
-              <i className="fa-solid fa-key" style={{ color: 'var(--theme-primary, #1B365D)' }}></i>
-              <span>Evaluator Access Credentials:</span>
-            </div>
-            <div>
-              Email: <strong className="text-dark">admin@hotel.com</strong>
-            </div>
-            <div>
-              Password: <strong className="text-dark">admin123</strong>
-            </div>
+
             <div className="mt-1" style={{ fontSize: '0.7rem', color: '#888' }}>
               Redirects directly to executive operations dashboard.
             </div>
@@ -434,7 +425,7 @@ const Login = () => {
 
           <div className="text-center mt-3" style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>
             Are you a registered guest?{' '}
-            <Link to="/user-login" className="fw-semibold text-decoration-none" style={{ color: 'var(--theme-primary, #0D9488)' }}>
+            <Link to="/luxurystay/login" className="fw-semibold text-decoration-none" style={{ color: 'var(--theme-primary, #0D9488)' }}>
               Sign in at Guest Portal
             </Link>
           </div>

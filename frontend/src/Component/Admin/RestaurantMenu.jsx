@@ -23,6 +23,8 @@ const RestaurantMenu = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selected, setSelected]         = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting]         = useState(false);
   const [error, setError]               = useState('');
   const [imageFile, setImageFile]       = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -118,6 +120,25 @@ const RestaurantMenu = () => {
       loadMenu();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update item.');
+    }
+  };
+
+  const handleDeleteMenuItem = async () => {
+    if (!deleteTarget?._id) return;
+    setDeleting(true);
+    try {
+      await api.delete(`${API_URL}/restaurant/menu/${deleteTarget._id}`, { headers });
+      setDeleteTarget(null);
+      if (selected?._id === deleteTarget._id) {
+        setShowEditModal(false);
+        setSelected(null);
+      }
+      loadMenu();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to delete menu item.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -327,9 +348,14 @@ const RestaurantMenu = () => {
                         </div>
                       </td>
                       <td>
-                        <button className="btn btn-soft-primary btn-sm" onClick={() => openEdit(item)} title="Edit">
-                          <i className="ri-pencil-line"></i>
-                        </button>
+                        <div className="d-flex align-items-center gap-1">
+                          <button className="btn btn-soft-primary btn-sm" onClick={() => openEdit(item)} title="Edit">
+                            <i className="ri-pencil-line"></i>
+                          </button>
+                          <button className="btn btn-soft-danger btn-sm" onClick={() => setDeleteTarget(item)} title="Delete item">
+                            <i className="ri-delete-bin-line"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -402,9 +428,12 @@ const RestaurantMenu = () => {
                       </div>
                     </div>
 
-                    <div className="card-footer bg-white p-2">
-                      <button className="btn btn-soft-primary btn-sm w-100" onClick={() => openEdit(item)}>
+                    <div className="card-footer bg-white p-2 d-flex gap-2">
+                      <button className="btn btn-soft-primary btn-sm flex-grow-1" onClick={() => openEdit(item)}>
                         <i className="ri-pencil-line me-1"></i>Edit
+                      </button>
+                      <button className="btn btn-soft-danger btn-sm" onClick={() => setDeleteTarget(item)} title="Delete item">
+                        <i className="ri-delete-bin-line"></i>
                       </button>
                     </div>
                   </div>
@@ -461,6 +490,18 @@ const RestaurantMenu = () => {
                 />
               </div>
               <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-outline-danger me-auto"
+                  onClick={() => {
+                    const target = selected;
+                    setShowEditModal(false);
+                    resetForm();
+                    setDeleteTarget(target);
+                  }}
+                >
+                  <i className="ri-delete-bin-line me-1"></i> Delete Item
+                </button>
                 <button className="btn btn-light" onClick={() => { setShowEditModal(false); resetForm(); }}>Cancel</button>
                 <button className="btn btn-primary" onClick={handleEdit}>Save Changes</button>
               </div>
@@ -469,6 +510,45 @@ const RestaurantMenu = () => {
         </div>
       )}
 
+      {/* ── DELETE CONFIRMATION MODAL ── */}
+      {deleteTarget && (
+        <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered modal-sm">
+            <div className="modal-content shadow-lg border-0 text-center p-4">
+              <div
+                className="avatar-md mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: 56, height: 56, background: '#fee2e2', color: '#dc2626', fontSize: 24 }}
+              >
+                <i className="ri-delete-bin-line" />
+              </div>
+              <h5 className="fw-bold mb-1">Delete Menu Item?</h5>
+              <p className="text-muted mb-1 fw-semibold">{deleteTarget.name}</p>
+              <p className="text-muted fs-12 mb-0">Category: {deleteTarget.category} &bull; Price: {formatPKR(deleteTarget.price || 0)}</p>
+              <div className="alert alert-warning py-2 mt-3 fs-12 text-start">
+                Yeh menu item permanently delete ho jayega aur guest restaurant menu se hat jayega.
+              </div>
+              <div className="d-flex gap-2 justify-content-center mt-3">
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  disabled={deleting}
+                  onClick={() => setDeleteTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  disabled={deleting}
+                  onClick={handleDeleteMenuItem}
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

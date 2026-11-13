@@ -10,6 +10,6 @@ router.get('/public', getPublicFeedbacks); // ← naya public route
 // Admin routes
 router.get('/', protect, staffRoles('admin', 'manager'), getAllFeedbacks);
 router.put('/:id/reply', protect, staffRoles('admin', 'manager'), replyToFeedback);
-router.delete('/:id', protect, adminOnly, deleteFeedback);
+router.delete('/:id', protect, staffRoles('admin', 'manager'), deleteFeedback);
 
 module.exports = router;

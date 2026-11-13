@@ -34,6 +34,8 @@ const Services = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal]       = useState(false);
   const [selected, setSelected]         = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting]         = useState(false);
   const [error, setError]               = useState('');
   const [addForm, setAddForm]           = useState({
     guestName: '', roomNumber: '', serviceType: 'room_service', description: ''
@@ -114,6 +116,25 @@ const Services = () => {
       loadServices();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create request.');
+    }
+  };
+
+  const handleDeleteService = async () => {
+    if (!deleteTarget?._id) return;
+    setDeleting(true);
+    try {
+      await api.delete(`${API_URL}/services/${deleteTarget._id}`, { headers });
+      setDeleteTarget(null);
+      if (selected?._id === deleteTarget._id) {
+        setShowDetailModal(false);
+        setSelected(null);
+      }
+      loadServices();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to delete service request.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -243,6 +264,15 @@ const Services = () => {
                             {NEXT_STATUS[s.status].replace('_', ' ')}
                           </button>
                         )}
+
+                        {/* Delete permanently */}
+                        <button
+                          className="btn btn-soft-danger btn-sm"
+                          onClick={() => setDeleteTarget(s)}
+                          title="Delete request"
+                        >
+                          <i className="ri-delete-bin-line"></i>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -300,6 +330,17 @@ const Services = () => {
                 )}
               </div>
               <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-outline-danger me-auto"
+                  onClick={() => {
+                    const target = selected;
+                    setShowDetailModal(false);
+                    setDeleteTarget(target);
+                  }}
+                >
+                  <i className="ri-delete-bin-line me-1"></i> Delete Request
+                </button>
                 <button className="btn btn-light" onClick={() => setShowDetailModal(false)}>Close</button>
               </div>
             </div>
@@ -365,6 +406,47 @@ const Services = () => {
                 <button className="btn btn-light" onClick={() => setShowAddModal(false)}>Cancel</button>
                 <button className="btn btn-success" onClick={handleAddService}>
                   <i className="ri-check-line me-1"></i>Create Request
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── DELETE CONFIRMATION MODAL ── */}
+      {deleteTarget && (
+        <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered modal-sm">
+            <div className="modal-content shadow-lg border-0 text-center p-4">
+              <div
+                className="avatar-md mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: 56, height: 56, background: '#fee2e2', color: '#dc2626', fontSize: 24 }}
+              >
+                <i className="ri-delete-bin-line" />
+              </div>
+              <h5 className="fw-bold mb-1">Delete Service Request?</h5>
+              <p className="text-muted mb-1 fw-semibold">
+                {deleteTarget.guestName || deleteTarget.userId?.name || 'Guest'} {deleteTarget.roomNumber ? `(Room ${deleteTarget.roomNumber})` : ''}
+              </p>
+              <p className="text-muted fs-12 mb-0">Type: {typeLabel(deleteTarget.serviceType)} &bull; Status: {deleteTarget.status}</p>
+              <div className="alert alert-warning py-2 mt-3 fs-12 text-start">
+                Yeh service request permanently delete ho jayegi.
+              </div>
+              <div className="d-flex gap-2 justify-content-center mt-3">
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  disabled={deleting}
+                  onClick={() => setDeleteTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  disabled={deleting}
+                  onClick={handleDeleteService}
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
                 </button>
               </div>
             </div>

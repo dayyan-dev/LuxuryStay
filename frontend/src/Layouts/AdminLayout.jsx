@@ -8,7 +8,7 @@ const STAFF_ROLES = ['admin', 'manager', 'receptionist', 'housekeeping', 'mainte
 
 const ADMIN_ROUTES = [
   '/admin/dashboard', '/admin/rooms', '/admin/bookings', '/admin/booking-new',
-  '/admin/checkin-checkout', '/admin/users', '/admin/staff', '/admin/payments',
+  '/admin/checkin-checkout', '/admin/users', '/admin/staff', '/admin/staff-credentials', '/admin/payments',
   '/admin/housekeeping', '/admin/maintenance', '/admin/feedback', '/admin/reports',
   '/admin/settings', '/admin/restaurant-menu', '/admin/restaurant-orders',
   '/admin/services', '/admin/faqs', '/admin/hotel-services', '/admin/about-us',
@@ -44,7 +44,7 @@ const AdminLayout = () => {
 
   // Synchronous guard prevents any brief dashboard/sidebar flash for guests or unauthenticated visitors
   if (!isStaff) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/luxurystaypanel/login" replace />;
   }
 
   const handleToggleSidebar = () => setSidebarOpen(!sidebarOpen);
@@ -55,7 +55,7 @@ const AdminLayout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-    navigate('/admin/login');
+    navigate('/luxurystaypanel/login');
   };
 
   return (

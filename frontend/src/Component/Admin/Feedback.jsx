@@ -16,6 +16,8 @@ const Feedback = () => {
   const [search, setSearch] = useState("");
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadFeedbacks();
@@ -43,6 +45,25 @@ const Feedback = () => {
       setFeedbacks(res.data);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleDeleteFeedback = async () => {
+    if (!deleteTarget?._id) return;
+    setDeleting(true);
+    try {
+      await api.delete(`${API_URL}/feedbacks/${deleteTarget._id}`, { headers });
+      setDeleteTarget(null);
+      if (selected?._id === deleteTarget._id) {
+        setShowDetailModal(false);
+        setSelected(null);
+      }
+      loadFeedbacks();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to delete feedback.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -250,16 +271,25 @@ const Feedback = () => {
                           </small>
                         </td>
                         <td>
-                          <button
-                            className="btn btn-soft-info btn-sm"
-                            onClick={() => {
-                              setSelected(f);
-                              setShowDetailModal(true);
-                            }}
-                            title="View Detail"
-                          >
-                            <i className="ri-eye-line"></i>
-                          </button>
+                          <div className="d-flex align-items-center gap-1">
+                            <button
+                              className="btn btn-soft-info btn-sm"
+                              onClick={() => {
+                                setSelected(f);
+                                setShowDetailModal(true);
+                              }}
+                              title="View Detail"
+                            >
+                              <i className="ri-eye-line"></i>
+                            </button>
+                            <button
+                              className="btn btn-soft-danger btn-sm"
+                              onClick={() => setDeleteTarget(f)}
+                              title="Delete permanently"
+                            >
+                              <i className="ri-delete-bin-line"></i>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -341,10 +371,63 @@ const Feedback = () => {
               </div>
               <div className="modal-footer">
                 <button
+                  type="button"
+                  className="btn btn-outline-danger me-auto"
+                  onClick={() => {
+                    const target = selected;
+                    setShowDetailModal(false);
+                    setDeleteTarget(target);
+                  }}
+                >
+                  <i className="ri-delete-bin-line me-1"></i> Delete Feedback
+                </button>
+                <button
                   className="btn btn-light"
                   onClick={() => setShowDetailModal(false)}
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DELETE CONFIRMATION MODAL ── */}
+      {deleteTarget && (
+        <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered modal-sm">
+            <div className="modal-content shadow-lg border-0 text-center p-4">
+              <div
+                className="avatar-md mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: 56, height: 56, background: '#fee2e2', color: '#dc2626', fontSize: 24 }}
+              >
+                <i className="ri-delete-bin-line" />
+              </div>
+              <h5 className="fw-bold mb-1">Delete Feedback?</h5>
+              <p className="text-muted mb-1 fw-semibold">
+                {deleteTarget.userId?.name || deleteTarget.name || "Guest"}
+              </p>
+              <p className="text-muted fs-12 mb-0">Rating: {deleteTarget.rating}/5 &bull; {new Date(deleteTarget.createdAt).toLocaleDateString('en-PK')}</p>
+              <div className="alert alert-warning py-2 mt-3 fs-12 text-start">
+                Yeh guest feedback permanently delete ho jayegi.
+              </div>
+              <div className="d-flex gap-2 justify-content-center mt-3">
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  disabled={deleting}
+                  onClick={() => setDeleteTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  disabled={deleting}
+                  onClick={handleDeleteFeedback}
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
                 </button>
               </div>
             </div>

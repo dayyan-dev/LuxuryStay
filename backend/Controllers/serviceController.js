@@ -50,4 +50,17 @@ const updateServiceStatus = async (req, res) => {
   }
 };
 
-module.exports = { createService, getAllServices, updateServiceStatus };
+// Delete Service Request (Admin / Manager)
+const deleteService = async (req, res) => {
+  try {
+    const service = await Service.findByIdAndDelete(req.params.id);
+    if (!service) {
+      return res.status(404).json({ message: 'Service request not found' });
+    }
+    res.status(200).json({ success: true, message: 'Service request deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+module.exports = { createService, getAllServices, updateServiceStatus, deleteService };

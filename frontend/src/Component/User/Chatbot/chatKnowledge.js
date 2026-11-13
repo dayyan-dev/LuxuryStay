@@ -93,7 +93,7 @@ const INTENTS = [
     patterns: [/admin|staff|login|dashboard|housekeeping|receptionist/i],
     answer: () =>
       'Staff and admin portals use a separate secure login with role-based access (admin, manager, receptionist, housekeeping, maintenance, kitchen) plus optional 2FA.',
-    links: [{ label: 'Staff login', to: '/login' }],
+    links: [{ label: 'Staff login', to: '/luxurystaypanel/login' }],
   },
   {
     id: 'thanks',

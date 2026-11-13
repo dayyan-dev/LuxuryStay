@@ -97,7 +97,7 @@ export default function Navbar() {
     setOpenMenu(null);
     setDrawerOpen(false);
     logout();
-    navigate('/user-login');
+    navigate('/luxurystay/login');
   };
 
   const firstName = user?.name ? user.name.split(' ')[0] : 'Guest';
@@ -132,7 +132,7 @@ export default function Navbar() {
                 <i className="fa-solid fa-tag" />
                 <span>Special offers</span>
               </Link>
-              <Link to="/login" className="lx-top-link" title="Staff and management portal">
+              <Link to="/luxurystaypanel/login" className="lx-top-link" title="Staff and management portal">
                 <i className="fa-solid fa-shield-halved" />
                 <span>Staff portal</span>
               </Link>
@@ -249,7 +249,7 @@ export default function Navbar() {
                   </div>
                 </div>
               ) : (
-                <Link to="/user-login" className="lx-signin">
+                <Link to="/luxurystay/login" className="lx-signin">
                   <i className="fa-regular fa-user" />
                   <span>Sign in</span>
                 </Link>
@@ -381,7 +381,7 @@ export default function Navbar() {
               <i className="fa-solid fa-arrow-right-from-bracket" /> Log out
             </button>
           ) : (
-            <Link to="/user-login" className="lx-drawer-secondary">
+            <Link to="/luxurystay/login" className="lx-drawer-secondary">
               <i className="fa-regular fa-user" /> Sign in / Register
             </Link>
           )}
@@ -389,7 +389,7 @@ export default function Navbar() {
           <a href={PHONE_HREF} className="lx-drawer-meta">
             <i className="fa-solid fa-phone" /> {PHONE_LABEL}
           </a>
-          <Link to="/login" className="lx-drawer-meta">
+          <Link to="/luxurystaypanel/login" className="lx-drawer-meta">
             <i className="fa-solid fa-shield-halved" /> Staff portal
           </Link>
         </div>

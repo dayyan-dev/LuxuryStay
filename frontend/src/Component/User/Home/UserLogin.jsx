@@ -71,7 +71,7 @@ const UserLogin = () => {
       const api = err.response?.data;
       if (api?.code === 'EMAIL_NOT_VERIFIED') {
         showPopup('error', api.message || 'Please verify your email OTP first.');
-        setTimeout(() => navigate('/register'), 1600);
+        setTimeout(() => navigate('/luxurystay/register'), 1600);
       } else if (api?.message) {
         showPopup('error', api.message);
       } else {
@@ -194,7 +194,7 @@ const UserLogin = () => {
 
             <p style={{ textAlign: 'center', color: 'var(--ls-gray)', fontSize: '0.9rem', margin: '1.5rem 0 0' }}>
               Don't have an account?{' '}
-              <Link to="/register" state={location.state} style={{ color: 'var(--ls-gold-dark)', fontWeight: 600 }}>
+              <Link to="/luxurystay/register" state={location.state} style={{ color: 'var(--ls-gold-dark)', fontWeight: 600 }}>
                 Create one
               </Link>
             </p>

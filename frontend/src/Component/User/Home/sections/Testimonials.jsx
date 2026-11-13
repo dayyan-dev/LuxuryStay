@@ -225,7 +225,7 @@ export default function Testimonials() {
             <>
               Want to share your stay experience?{' '}
               <Link
-                to="/register"
+                to="/luxurystay/register"
                 state={{ from: '/rooms#guest-feedback' }}
                 className="fw-600 link-primary link-offset-2 link-underline-opacity-100 link-underline-opacity-0-hover"
               >
@@ -233,7 +233,7 @@ export default function Testimonials() {
               </Link>
               {' '}or{' '}
               <Link
-                to="/user-login"
+                to="/luxurystay/login"
                 state={{ from: '/rooms#guest-feedback' }}
                 className="fw-600 link-primary link-offset-2 link-underline-opacity-100 link-underline-opacity-0-hover"
               >

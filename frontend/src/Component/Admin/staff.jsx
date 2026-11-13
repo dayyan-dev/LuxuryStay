@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../api/authApi';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5001/api');
@@ -20,10 +21,15 @@ const Staff = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [error, setError] = useState('');
   const [addForm, setAddForm] = useState({ name: '', email: '', phone: '', role: '', password: '' });
   const [editForm, setEditForm] = useState({ name: '', phone: '', role: '', status: '' });
+  const [showAddPass, setShowAddPass] = useState(false);
+  const [createdResult, setCreatedResult] = useState(null);
+  const [copiedLink, setCopiedLink] = useState(null);
 
   useEffect(() => { loadStaff(); }, []);
 
@@ -94,26 +100,66 @@ const Staff = () => {
     return onlyNums;
   };
 
+  const generateRandomPassword = () => {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const special = '!@#$%&*';
+    const pick = (chars) => chars[Math.floor(Math.random() * chars.length)];
+    const generated =
+      pick(upper) +
+      pick(lower) +
+      pick(digits) +
+      pick(special) +
+      Array.from({ length: 6 }, () => pick(lower + digits)).join('');
+    setAddForm((prev) => ({ ...prev, password: generated }));
+    setShowAddPass(true);
+  };
+
   const handleAdd = async () => {
     setError('');
-    const { name, email, phone, role, password } = addForm;
+    const { name, email, phone, role } = addForm;
+    let password = addForm.password;
 
     if (!name.trim())               { setError('Full name is required.');         return; }
     if (!email.trim())              { setError('Email is required.');              return; }
     if (!emailRegex.test(email))    { setError('Enter a valid email address.');    return; }
     if (!phone.trim())              { setError('Phone number is required.');       return; }
     if (!phoneRegex.test(phone))    { setError('Enter valid Pakistani phone number (03XXXXXXXXX — 11 digits).'); return; }
-    if (!password.trim())           { setError('Password is required.');           return; }
-    if (!passwordRegex.test(password)) { setError('Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number.'); return; }
     if (!role)                      { setError('Please select a role.');           return; }
 
+    if (!password || !password.trim()) {
+      const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+      const lower = 'abcdefghjkmnpqrstuvwxyz';
+      const digits = '23456789';
+      const special = '!@#$%&*';
+      const pick = (chars) => chars[Math.floor(Math.random() * chars.length)];
+      password =
+        pick(upper) +
+        pick(lower) +
+        pick(digits) +
+        pick(special) +
+        Array.from({ length: 6 }, () => pick(lower + digits)).join('');
+    } else if (!passwordRegex.test(password)) {
+      setError('Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number.');
+      return;
+    }
+
     try {
-      await api.post(
+      const res = await api.post(
         `${API_URL}/auth/staff`,
         { name, email, phone, password, role },
         { headers: getHeaders() }
       );
       setShowAddModal(false);
+      setCreatedResult({
+        name,
+        email,
+        phone,
+        role,
+        password: res.data?.credentials?.password || password,
+        portalUrl: res.data?.credentials?.portalUrl || `/${role}/${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      });
       setAddForm({ name: '', email: '', phone: '', role: '', password: '' });
       loadStaff();
     } catch (err) { setError(err.response?.data?.message || 'Error adding staff.'); }
@@ -144,6 +190,20 @@ const Staff = () => {
     }
   };
 
+  const handleDeleteStaff = async () => {
+    if (!deleteTarget?._id) return;
+    setDeleting(true);
+    try {
+      await api.delete(`${API_URL}/auth/users/${deleteTarget._id}`, { headers: getHeaders() });
+      setDeleteTarget(null);
+      loadStaff();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete staff member.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const openEdit = (u) => {
     setSelectedStaff(u);
     setEditForm({ name: u.name, phone: u.phone || '', role: u.role, status: u.status || 'active' });
@@ -164,13 +224,19 @@ const Staff = () => {
         <div className="col-12">
           <div className="page-title-box d-sm-flex align-items-center justify-content-between">
             <h4 className="mb-sm-0">Manage Staff</h4>
-            <button className="btn btn-success" onClick={() => {
-              setAddForm({ name: '', email: '', phone: '', role: '', password: '' });
-              setError('');
-              setShowAddModal(true);
-            }}>
-              <i className="ri-user-add-line me-1"></i> Add Staff Member
-            </button>
+            <div className="d-flex align-items-center gap-2">
+              <Link to="/admin/staff-credentials" className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
+                <i className="ri-key-2-line"></i> Staff Credentials &amp; URLs
+              </Link>
+              <button className="btn btn-success btn-sm" onClick={() => {
+                setAddForm({ name: '', email: '', phone: '', role: '', password: '' });
+                setShowAddPass(false);
+                setError('');
+                setShowAddModal(true);
+              }}>
+                <i className="ri-user-add-line me-1"></i> Add Staff Member
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -268,7 +334,37 @@ const Staff = () => {
                           <div className="fw-medium">{u.name}</div>
                         </div>
                       </td>
-                      <td>{u.email}</td>
+                      <td>
+                        <div className="fw-medium text-dark">{u.email}</div>
+                        <div className="d-flex align-items-center gap-1 mt-1">
+                          <code style={{ fontSize: 11, background: '#f8fafc', padding: '1px 5px', borderRadius: 4 }}>
+                            /{u.role}/{u.portalSlug || u.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-')}
+                          </code>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-light border p-0 px-1"
+                            title="Copy Portal Link"
+                            onClick={() => {
+                              const slug = u.portalSlug || u.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+                              const fullLink = `${window.location.origin}/${u.role}/${slug}`;
+                              navigator.clipboard.writeText(fullLink);
+                              setCopiedLink(u._id);
+                              setTimeout(() => setCopiedLink(null), 2000);
+                            }}
+                          >
+                            <i className={copiedLink === u._id ? "ri-check-line text-success" : "ri-file-copy-line"} style={{ fontSize: 11 }} />
+                          </button>
+                          <a
+                            href={`/${u.role}/${u.portalSlug || u.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-sm btn-light border p-0 px-1 text-primary"
+                            title="Open Portal"
+                          >
+                            <i className="ri-external-link-line" style={{ fontSize: 11 }} />
+                          </a>
+                        </div>
+                      </td>
                       <td>{u.phone || '—'}</td>
                       <td>{roleBadge(u.role)}</td>
                       <td>{statusBadge(u.status || 'active')}</td>
@@ -312,6 +408,14 @@ const Staff = () => {
                               <i className="ri-user-follow-line"></i>
                             </button>
                           )}
+                          {/* Permanent Delete */}
+                          <button
+                            className="btn btn-soft-danger btn-sm"
+                            title="Delete permanently"
+                            onClick={() => setDeleteTarget(u)}
+                          >
+                            <i className="ri-delete-bin-line"></i>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -365,6 +469,9 @@ const Staff = () => {
                 </div>
               </div>
               <div className="modal-footer">
+                <button className="btn btn-outline-danger me-auto" onClick={() => { const target = selectedStaff; setShowViewModal(false); setDeleteTarget(target); }}>
+                  <i className="ri-delete-bin-line me-1"></i> Delete
+                </button>
                 <button className="btn btn-light" onClick={() => setShowViewModal(false)}>Close</button>
                 <button className="btn btn-primary" onClick={() => { setShowViewModal(false); openEdit(selectedStaff); }}>
                   <i className="ri-edit-line me-1"></i> Edit
@@ -435,17 +542,38 @@ const Staff = () => {
                     <small className="text-muted">Pakistani number — 03XXXXXXXXX (11 digits)</small>
                   </div>
 
-                  {/* Password */}
+                  {/* Password with Random Generator */}
                   <div className="col-12">
-                    <label className="form-label">Password <span className="text-danger">*</span></label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      placeholder="Min 8 chars, 1 uppercase, 1 number"
-                      value={addForm.password}
-                      onChange={e => setAddForm({ ...addForm, password: e.target.value })}
-                    />
-                    <small className="text-muted">Min 8 characters · 1 uppercase · 1 lowercase · 1 number</small>
+                    <div className="d-flex align-items-center justify-content-between mb-1">
+                      <label className="form-label mb-0">
+                        Password <span className="text-muted small">(Leave empty to auto-generate)</span>
+                      </label>
+                      <button
+                        type="button"
+                        className="btn btn-link btn-sm p-0 text-decoration-none fw-semibold"
+                        onClick={generateRandomPassword}
+                      >
+                        🎲 Generate Random
+                      </button>
+                    </div>
+                    <div className="input-group">
+                      <input
+                        type={showAddPass ? "text" : "password"}
+                        className="form-control"
+                        placeholder="Type password or leave empty to auto-generate"
+                        value={addForm.password}
+                        onChange={e => setAddForm({ ...addForm, password: e.target.value })}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-light border"
+                        onClick={() => setShowAddPass(!showAddPass)}
+                        title={showAddPass ? "Hide Password" : "Show Password"}
+                      >
+                        <i className={showAddPass ? "ri-eye-off-line" : "ri-eye-line"} />
+                      </button>
+                    </div>
+                    <small className="text-muted">Min 8 chars with uppercase, lowercase, and number. Saved in Credentials Directory.</small>
                   </div>
 
                   {/* Role */}
@@ -465,6 +593,105 @@ const Staff = () => {
               <div className="modal-footer">
                 <button className="btn btn-light" onClick={() => setShowAddModal(false)}>Cancel</button>
                 <button className="btn btn-success" onClick={handleAdd}>Add Staff</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Created Staff Success Credentials Modal */}
+      {createdResult && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1070 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content shadow-lg border-0 rounded-4">
+              <div className="modal-header bg-success text-white">
+                <h5 className="modal-title fw-bold text-white d-flex align-items-center gap-2">
+                  <i className="ri-checkbox-circle-fill fs-4" /> Staff Account Created!
+                </h5>
+                <button className="btn-close btn-close-white" onClick={() => setCreatedResult(null)}></button>
+              </div>
+              <div className="modal-body p-4">
+                <p className="text-muted small mb-3">
+                  The staff member account has been registered with immediate verified access. Share these credentials or portal URL with the user:
+                </p>
+
+                <div className="p-3 bg-light rounded-3 mb-3 border">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span className="text-muted small">Staff Name:</span>
+                    <strong className="text-dark">{createdResult.name}</strong>
+                  </div>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span className="text-muted small">Assigned Role:</span>
+                    <span className="badge bg-primary text-uppercase">{createdResult.role}</span>
+                  </div>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span className="text-muted small">Email Address:</span>
+                    <code>{createdResult.email}</code>
+                  </div>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span className="text-muted small">Password:</span>
+                    <div className="d-flex align-items-center gap-2">
+                      <code className="fw-bold text-danger">{createdResult.password}</code>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-light border p-1 py-0"
+                        title="Copy Password"
+                        onClick={() => {
+                          navigator.clipboard.writeText(createdResult.password);
+                          alert('Password copied to clipboard!');
+                        }}
+                      >
+                        <i className="ri-file-copy-line" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-top mt-2">
+                    <span className="text-muted small d-block mb-1">Custom Portal URL:</span>
+                    <div className="d-flex align-items-center gap-2">
+                      <code className="text-primary fw-bold text-break">
+                        {window.location.origin}{createdResult.portalUrl}
+                      </code>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-light border p-1 py-0 flex-shrink-0"
+                        title="Copy Portal Link"
+                        onClick={() => {
+                          const full = `${window.location.origin}${createdResult.portalUrl}`;
+                          navigator.clipboard.writeText(full);
+                          alert('Portal URL copied to clipboard: ' + full);
+                        }}
+                      >
+                        <i className="ri-file-copy-line" />
+                      </button>
+                      <a
+                        href={createdResult.portalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-sm btn-soft-primary p-1 py-0 flex-shrink-0"
+                        title="Open Portal"
+                      >
+                        <i className="ri-external-link-line" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="alert alert-info py-2 small mb-0">
+                  <i className="ri-information-line me-1" />
+                  This password is now saved in <strong>Staff Credentials &amp; URLs</strong> in the sidebar. If the user forgets, you can always look it up there.
+                </div>
+              </div>
+              <div className="modal-footer">
+                <Link
+                  to="/admin/staff-credentials"
+                  className="btn btn-outline-primary"
+                  onClick={() => setCreatedResult(null)}
+                >
+                  <i className="ri-key-2-line me-1" /> View in Credentials Directory
+                </Link>
+                <button className="btn btn-success" onClick={() => setCreatedResult(null)}>
+                  Done
+                </button>
               </div>
             </div>
           </div>
@@ -555,6 +782,35 @@ const Staff = () => {
                 <div className="d-flex gap-2 justify-content-center mt-3">
                   <button className="btn btn-light" onClick={() => setShowDeactivateModal(false)}>Cancel</button>
                   <button className="btn btn-warning" onClick={handleDeactivate}>Deactivate</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permanent Delete Modal */}
+      {deleteTarget && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-sm">
+            <div className="modal-content">
+              <div className="modal-body text-center p-4">
+                <div className="avatar-md mx-auto mb-3">
+                  <span className="avatar-title bg-danger-subtle rounded-circle fs-1">
+                    <i className="ri-delete-bin-line text-danger"></i>
+                  </span>
+                </div>
+                <h5>Delete Staff Member?</h5>
+                <p className="text-muted mb-1 fw-semibold">{deleteTarget.name}</p>
+                <p className="text-muted fs-12 mb-0">Role: <span className="text-capitalize">{deleteTarget.role}</span> &bull; {deleteTarget.email}</p>
+                <div className="alert alert-warning py-2 mt-3 fs-12 text-start">
+                  Yeh staff account permanently delete ho jayega. Yeh action undo nahi ho sakti.
+                </div>
+                <div className="d-flex gap-2 justify-content-center mt-3">
+                  <button className="btn btn-light" disabled={deleting} onClick={() => setDeleteTarget(null)}>Cancel</button>
+                  <button className="btn btn-danger" disabled={deleting} onClick={handleDeleteStaff}>
+                    {deleting ? 'Deleting...' : 'Yes, Delete'}
+                  </button>
                 </div>
               </div>
             </div>

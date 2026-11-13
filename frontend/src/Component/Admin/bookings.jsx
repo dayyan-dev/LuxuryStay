@@ -15,6 +15,7 @@ const Bookings = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showViewModal, setShowViewModal] = useState(false);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   // const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   // const [updateStatus, setUpdateStatus] = useState({ bookingStatus: '', paymentStatus: '' });
@@ -132,6 +133,20 @@ const Bookings = () => {
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || 'Failed to cancel booking.');
+    }
+  };
+  const deleteBooking = async (id) => {
+    try {
+      await api.delete(`${API_URL}/bookings/${id}`, { headers });
+      setDeleteTarget(null);
+      if (selectedBooking?._id === id) {
+        setShowViewModal(false);
+        setSelectedBooking(null);
+      }
+      loadBookings();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to delete booking.');
     }
   };
   const markAsPaid = async (id) => {
@@ -365,6 +380,15 @@ const Bookings = () => {
                               Mark Paid
                             </button>
                           )}
+
+                          {/* Delete permanently */}
+                          <button
+                            className="btn btn-soft-danger btn-sm"
+                            title="Delete permanently"
+                            onClick={() => setDeleteTarget(b)}
+                          >
+                            <i className="ri-delete-bin-line"></i>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -504,6 +528,17 @@ const Bookings = () => {
               </div>
               <div className="modal-footer">
                 <button
+                  type="button"
+                  className="btn btn-outline-danger me-auto"
+                  onClick={() => {
+                    const target = selectedBooking;
+                    setShowViewModal(false);
+                    setDeleteTarget(target);
+                  }}
+                >
+                  <i className="ri-delete-bin-line me-1"></i> Delete Booking
+                </button>
+                <button
                   className="btn btn-light"
                   onClick={() => setShowViewModal(false)}
                 >
@@ -514,6 +549,22 @@ const Bookings = () => {
           </div>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => deleteBooking(deleteTarget._id)}
+        title="Permanently delete this booking?"
+        message={
+          deleteTarget
+            ? `Booking for ${deleteTarget.guestName || deleteTarget.userId?.name || 'Guest'}${deleteTarget.roomId ? ` — Room ${deleteTarget.roomId.roomNumber}` : ''} will be permanently removed. If the room was marked booked, it will be restored to available.`
+            : ''
+        }
+        confirmLabel="Yes, Delete Permanently"
+        cancelLabel="Keep Booking"
+        danger
+      />
 
       {/* Update Modal */}
       {/* {showUpdateModal && selectedBooking && (

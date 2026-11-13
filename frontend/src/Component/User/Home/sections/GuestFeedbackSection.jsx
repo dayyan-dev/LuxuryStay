@@ -382,7 +382,7 @@ export default function GuestFeedbackSection({ rooms = [] }) {
 
                   <div className="d-grid gap-2">
                     <Link
-                      to="/user-login"
+                      to="/luxurystay/login"
                       state={{ from: "/rooms#guest-feedback" }}
                       className="btn rounded-pill fw-600 py-2"
                       style={{
@@ -397,7 +397,7 @@ export default function GuestFeedbackSection({ rooms = [] }) {
                     </Link>
 
                     <Link
-                      to="/register"
+                      to="/luxurystay/register"
                       state={{ from: "/rooms#guest-feedback" }}
                       className="btn btn-outline-secondary rounded-pill fw-600 py-2"
                     >

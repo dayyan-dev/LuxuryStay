@@ -16,6 +16,6 @@ router.get('/category/:category', getMenuByCategory);
 // multer middleware add kiya — image upload ke liye
 router.post('/', protect, staffRoles('admin', 'manager'), upload.single('image'), addMenuItem);
 router.put('/:id', protect, staffRoles('admin', 'manager'), upload.single('image'), updateMenuItem);
-router.delete('/:id', protect, adminOnly, deleteMenuItem);
+router.delete('/:id', protect, staffRoles('admin', 'manager'), deleteMenuItem);
 
 module.exports = router;

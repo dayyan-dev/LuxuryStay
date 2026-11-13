@@ -769,10 +769,37 @@ const getRoomBookedDates = async (req, res) => {
   }
 };
 
+// DELETE /api/bookings/:id (Admin / Manager)
+const deleteBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    // Restore room status if this booking was active/checked-in
+    if (['pending', 'confirmed', 'checked_in'].includes(booking.bookingStatus) && booking.roomId) {
+      await Room.findByIdAndUpdate(booking.roomId, { status: 'available' });
+    }
+
+    await Booking.findByIdAndDelete(req.params.id);
+
+    await auditLog.log(req, {
+      action: 'BOOKING_DELETED',
+      targetModel: 'Booking',
+      targetId: req.params.id,
+      description: `Admin deleted booking for guest: ${booking.guestName || booking.userId}`,
+      severity: 'critical',
+    });
+
+    res.status(200).json({ success: true, message: "Booking deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
 module.exports = {
   createBooking, getMyBookings, getBookingsByUserId,
   getAllBookings, updateBookingStatus, checkInBooking,
   checkOutBooking, completeBooking, updatePaymentStatus,
   generateBookingQR, qrCheckIn, downloadInvoice, emailInvoice,
-  getRoomBookedDates,
+  getRoomBookedDates, deleteBooking,
 };

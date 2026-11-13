@@ -18,6 +18,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  initialPassword: {
+    type: String,
+    default: null
+  },
+  portalSlug: {
+    type: String,
+    default: null
+  },
   role: {
     type: String,
     enum: ['admin', 'manager', 'receptionist', 'housekeeping', 'maintenance', 'kitchen', 'guest'],

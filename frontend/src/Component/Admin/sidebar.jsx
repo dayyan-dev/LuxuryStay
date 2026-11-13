@@ -16,7 +16,7 @@ const Sidebar = ({ collapsed = false, open = false, onClose, onLogout }) => {
   useEffect(() => {
     const MENU_ROUTES = {
       bookings: ['/admin/bookings', '/admin/booking-new', '/admin/checkin-checkout'],
-      users: ['/admin/users', '/admin/staff'],
+      users: ['/admin/users', '/admin/staff', '/admin/staff-credentials'],
       billing: ['/admin/payments'],
       restaurant: ['/admin/restaurant-menu', '/admin/restaurant-orders'],
     };
@@ -191,11 +191,12 @@ const Sidebar = ({ collapsed = false, open = false, onClose, onLogout }) => {
         )}
         {hasRole('admin') && (
           <>
-            <DropdownToggle menuKey="users" icon="ri-user-line" label="Users & Staff" defaultTo="/admin/users" parentActive={isParentActive('/admin/users', '/admin/staff')} />
+            <DropdownToggle menuKey="users" icon="ri-user-line" label="Users & Staff" defaultTo="/admin/users" parentActive={isParentActive('/admin/users', '/admin/staff', '/admin/staff-credentials')} />
             {openMenus.users && (
               <div>
                 <SubLink to="/admin/users" label="Registered Guests" />
                 <SubLink to="/admin/staff" label="Manage Staff" />
+                <SubLink to="/admin/staff-credentials" label="Staff Credentials & URLs" />
               </div>
             )}
           </>

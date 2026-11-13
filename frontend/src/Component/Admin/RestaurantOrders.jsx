@@ -24,6 +24,8 @@ const RestaurantOrders = () => {
   const [showNewModal, setShowNewModal]       = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selected, setSelected]       = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting]       = useState(false);
   const [error, setError]             = useState('');
   const [orderForm, setOrderForm]     = useState({
     guestName: '', roomNumber: '', notes: '',
@@ -150,6 +152,26 @@ const RestaurantOrders = () => {
         setSelected({ ...order, status: 'Cancelled' });
       }
     } catch (err) { console.error(err); }
+  };
+
+  // Delete button
+  const handleDeleteOrder = async () => {
+    if (!deleteTarget?._id) return;
+    setDeleting(true);
+    try {
+      await api.delete(`${API_URL}/restaurant/orders/${deleteTarget._id}`, { headers });
+      setDeleteTarget(null);
+      if (selected?._id === deleteTarget._id) {
+        setShowDetailModal(false);
+        setSelected(null);
+      }
+      loadOrders();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to delete order.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const openDetail = (order) => {
@@ -280,6 +302,13 @@ const RestaurantOrders = () => {
                             <i className="ri-close-line"></i>
                           </button>
                         )}
+                        <button
+                          className="btn btn-soft-danger btn-sm"
+                          onClick={() => setDeleteTarget(o)}
+                          title="Delete permanently"
+                        >
+                          <i className="ri-delete-bin-line"></i>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -379,6 +408,16 @@ const RestaurantOrders = () => {
                 )}
               </div>
               <div className="modal-footer">
+                <button
+                  className="btn btn-outline-danger me-auto"
+                  onClick={() => {
+                    const target = selected;
+                    setShowDetailModal(false);
+                    setDeleteTarget(target);
+                  }}
+                >
+                  <i className="ri-delete-bin-line me-1"></i> Delete Order
+                </button>
                 <button className="btn btn-light" onClick={() => setShowDetailModal(false)}>Close</button>
               </div>
             </div>
@@ -496,6 +535,47 @@ const RestaurantOrders = () => {
                 <button className="btn btn-light" onClick={() => setShowNewModal(false)}>Cancel</button>
                 <button className="btn btn-success" onClick={handleCreateOrder}>
                   <i className="ri-check-line me-1"></i>Place Order
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── DELETE CONFIRMATION MODAL ── */}
+      {deleteTarget && (
+        <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered modal-sm">
+            <div className="modal-content shadow-lg border-0 text-center p-4">
+              <div
+                className="avatar-md mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: 56, height: 56, background: '#fee2e2', color: '#dc2626', fontSize: 24 }}
+              >
+                <i className="ri-delete-bin-line" />
+              </div>
+              <h5 className="fw-bold mb-1">Delete Order?</h5>
+              <p className="text-muted mb-1 fw-semibold">
+                {deleteTarget.guestName || 'Guest'} {deleteTarget.roomNumber ? `(Room ${deleteTarget.roomNumber})` : ''}
+              </p>
+              <p className="text-muted fs-12 mb-0">Total: {formatPKR(deleteTarget.totalAmount || 0)} &bull; Status: {deleteTarget.status}</p>
+              <div className="alert alert-warning py-2 mt-3 fs-12 text-start">
+                Yeh restaurant order permanently delete ho jayega.
+              </div>
+              <div className="d-flex gap-2 justify-content-center mt-3">
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  disabled={deleting}
+                  onClick={() => setDeleteTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  disabled={deleting}
+                  onClick={handleDeleteOrder}
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
                 </button>
               </div>
             </div>
